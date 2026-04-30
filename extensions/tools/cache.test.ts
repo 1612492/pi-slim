@@ -7,7 +7,7 @@ import { buildCachedToolText, createCacheWriter } from "./cache.js";
 const originalCwd = process.cwd();
 const originalHome = process.env.HOME;
 const sessionFile =
-  "/Users/phat/.pi/agent/sessions/--Users-phat-git-1612492-pi-slim--/2026-04-30T15-42-32-577Z_019ddf0e-5880-712e-b71a-c679c02f2e81.jsonl";
+  "/Users/tester/.pi/agent/sessions/--Users-tester-project--/session-123.jsonl";
 
 describe("cache writer", () => {
   let testDir: string;
@@ -27,10 +27,10 @@ describe("cache writer", () => {
       await writer.writeToolOutputFile("hello");
 
     expect(sessionCacheDir).toBe(
-      `${testDir}/.cache/pi/--Users-phat-git-1612492-pi-slim--/2026-04-30T15-42-32-577Z_019ddf0e-5880-712e-b71a-c679c02f2e81`,
+      `${testDir}/.cache/pi/--Users-tester-project--/session-123`,
     );
     expect(cacheFile).toContain(
-      ".cache/pi/tools/--Users-phat-git-1612492-pi-slim--/2026-04-30T15-42-32-577Z_019ddf0e-5880-712e-b71a-c679c02f2e81/",
+      ".cache/pi/tools/--Users-tester-project--/session-123/",
     );
     await expect(access(cacheFile)).resolves.toBeUndefined();
     await expect(readFile(cacheFile, "utf8")).resolves.toBe("hello");
@@ -61,7 +61,7 @@ describe("cache writer", () => {
     });
 
     expect(cacheFile).toContain(
-      ".cache/pi/plans/--Users-phat-git-1612492-pi-slim--/2026-04-30T15-42-32-577Z_019ddf0e-5880-712e-b71a-c679c02f2e81/drafts/step-1.md",
+      ".cache/pi/plans/--Users-tester-project--/session-123/drafts/step-1.md",
     );
   });
 
@@ -79,7 +79,7 @@ describe("cache writer", () => {
     expect(result.text).toContain("short output");
     expect(result.text).toContain("Full output saved to:");
     expect(String(result.details.fullOutputPath)).toContain(
-      ".cache/pi/tools/--Users-phat-git-1612492-pi-slim--/2026-04-30T15-42-32-577Z_019ddf0e-5880-712e-b71a-c679c02f2e81/web_search_exa-",
+      ".cache/pi/tools/--Users-tester-project--/session-123/web_search_exa-",
     );
     await expect(
       readFile(String(result.details.fullOutputPath), "utf8"),

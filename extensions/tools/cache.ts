@@ -128,6 +128,7 @@ export function createCacheWriter(getSessionFile: () => string | undefined) {
 
   return {
     getCacheRootDir,
+    getCategoryCacheDir,
     getSessionCacheDir,
     writeCacheFile,
     writeToolOutputFile,
