@@ -1,12 +1,26 @@
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
-import { context7Tool } from "./tools/context7.js";
-import { cleanupTempOutputFiles } from "./tools/temp-output.js";
-import { websearchTool } from "./tools/websearch.js";
+import {
+  createQueryDocsTool,
+  createResolveLibraryIdTool,
+} from "./tools/context7.js";
+import { createCacheWriter } from "./tools/cache.js";
+import { createWebFetchExaTool, createWebSearchExaTool } from "./tools/exa.js";
 
 export default function (pi: ExtensionAPI) {
-  pi.registerTool(websearchTool);
-  pi.registerTool(context7Tool);
+  let currentSessionFile: string | undefined;
+  const getSessionFile = () => currentSessionFile;
+  const cacheWriter = createCacheWriter(getSessionFile);
+
+  pi.on("session_start", async (_event, ctx) => {
+    currentSessionFile = ctx.sessionManager.getSessionFile();
+  });
+
+  pi.registerTool(createResolveLibraryIdTool(getSessionFile));
+  pi.registerTool(createQueryDocsTool(getSessionFile));
+  pi.registerTool(createWebSearchExaTool(getSessionFile));
+  pi.registerTool(createWebFetchExaTool(getSessionFile));
   pi.on("session_shutdown", async () => {
-    await cleanupTempOutputFiles();
+    await cacheWriter.clearCacheCategory("tools");
+    currentSessionFile = undefined;
   });
 }
