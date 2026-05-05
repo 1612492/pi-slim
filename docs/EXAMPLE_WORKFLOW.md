@@ -21,13 +21,13 @@ Recommended flow:
 User request:
 
 ```text
-Trace where tool cache paths are produced.
+Trace where tool output is formatted and truncated.
 ```
 
 Recommended flow:
 
 ```text
-Use subagent with agent explorer to trace where tool cache paths are produced.
+Use subagent with agent explorer to trace where tool output is formatted and truncated.
 ```
 
 ## Example 3: Context7-first docs research

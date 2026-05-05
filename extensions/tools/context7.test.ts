@@ -118,7 +118,7 @@ describe("context7 tools", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
 
-    const tool = createResolveLibraryIdTool(() => "demo");
+    const tool = createResolveLibraryIdTool();
     const result = await tool.execute(
       "1",
       { libraryName: "react", query: "hooks" },
@@ -140,7 +140,7 @@ describe("context7 tools", () => {
       .mockResolvedValue(new Response("hooks docs", { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);
 
-    const tool = createQueryDocsTool(() => "demo");
+    const tool = createQueryDocsTool();
     const result = await tool.execute(
       "1",
       { libraryId: "/facebook/react", query: "hooks" },

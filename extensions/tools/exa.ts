@@ -1,7 +1,13 @@
-import { defineTool, keyHint } from "@mariozechner/pi-coding-agent";
+import {
+  DEFAULT_MAX_BYTES,
+  DEFAULT_MAX_LINES,
+  defineTool,
+  formatSize,
+  keyHint,
+  truncateHead,
+} from "@mariozechner/pi-coding-agent";
 import { Text } from "@mariozechner/pi-tui";
 import { Type } from "typebox";
-import { buildCachedToolText, createCacheWriter } from "./cache.js";
 
 const EXA_SEARCH_URL = "https://api.exa.ai/search";
 const EXA_CONTENTS_URL = "https://api.exa.ai/contents";
@@ -72,7 +78,27 @@ export interface ExaToolDetails extends Record<string, unknown> {
   truncation?: {
     truncated?: boolean;
   };
-  fullOutputPath?: string;
+}
+
+export function buildToolText(details: Record<string, unknown>, text: string) {
+  const truncation = truncateHead(text, {
+    maxLines: DEFAULT_MAX_LINES,
+    maxBytes: DEFAULT_MAX_BYTES,
+  });
+
+  if (!truncation.truncated) {
+    return {
+      text: truncation.content,
+      details: { ...details, truncation },
+    };
+  }
+
+  const truncatedLines = truncation.totalLines - truncation.outputLines;
+  const truncatedBytes = truncation.totalBytes - truncation.outputBytes;
+  return {
+    text: `${truncation.content}\n\n[Output truncated: showing ${truncation.outputLines} of ${truncation.totalLines} lines (${formatSize(truncation.outputBytes)} of ${formatSize(truncation.totalBytes)}). ${truncatedLines} lines (${formatSize(truncatedBytes)}) omitted.]`,
+    details: { ...details, truncation },
+  };
 }
 
 export function getExaApiKey(env: NodeJS.ProcessEnv = process.env): string {
@@ -239,10 +265,7 @@ function getCollapsedLabel(input: {
   return parts.join(" ");
 }
 
-export function createWebSearchExaTool(
-  getSessionName: () => string | undefined,
-) {
-  const cacheWriter = createCacheWriter(getSessionName);
+export function createWebSearchExaTool() {
   return defineTool({
     name: "web_search_exa",
     label: "Web Search Exa",
@@ -255,11 +278,9 @@ export function createWebSearchExaTool(
     async execute(_toolCallId, params, signal) {
       const apiKey = getExaApiKey();
       const data = await callExaSearch(fetch, apiKey, params, signal);
-      const result = await buildCachedToolText(
-        cacheWriter,
+      const result = buildToolText(
         { requestId: data.requestId, resultCount: data.results?.length ?? 0 },
         formatExaSearchResponse(data),
-        { category: "tools", prefix: "web_search_exa" },
       );
 
       return {
@@ -293,10 +314,7 @@ export function createWebSearchExaTool(
   });
 }
 
-export function createWebFetchExaTool(
-  getSessionName: () => string | undefined,
-) {
-  const cacheWriter = createCacheWriter(getSessionName);
+export function createWebFetchExaTool() {
   return defineTool({
     name: "web_fetch_exa",
     label: "Web Fetch Exa",
@@ -309,11 +327,9 @@ export function createWebFetchExaTool(
     async execute(_toolCallId, params, signal) {
       const apiKey = getExaApiKey();
       const data = await callExaContents(fetch, apiKey, params, signal);
-      const result = await buildCachedToolText(
-        cacheWriter,
+      const result = buildToolText(
         { requestId: data.requestId, url: params.url },
         formatExaContentsResponse(data, params.url),
-        { category: "tools", prefix: "web_fetch_exa" },
       );
 
       return {

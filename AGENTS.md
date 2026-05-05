@@ -1,13 +1,13 @@
 # AGENTS.md
 
-This project extends Pi with Context7 and Exa tools, runtime plan mode, focused repo-owned subagents, and a session-scoped cache layer.
+This project extends Pi with Context7 and Exa tools, runtime plan mode, focused repo-owned subagents, and compact tool-output handling.
 
 ## Priorities
 
 1. Optimize for context efficiency.
 2. Prefer the smallest tool that can answer the question.
 3. Avoid injecting large external content directly into the conversation.
-4. Use cached file paths when deeper inspection is needed.
+4. Keep tool output compact in-context.
 
 ## Available project tools
 
@@ -75,30 +75,16 @@ Rules:
 1. Prefer `query-docs` over web search for software documentation.
 2. Prefer `web_search_exa` over `web_fetch_exa`.
 3. Fetch one page at a time unless comparison is necessary.
-4. Avoid repeated fetches for the same page when a cached file path already exists.
-5. Read cached files only when the preview is insufficient.
-6. When reading cached files, read only the relevant sections or smaller slices instead of the full file when possible.
-7. Do not call both Context7 and Exa for the same simple question unless the first source is insufficient.
-8. Do not reintroduce persisted session-plan files as the primary workflow.
-9. Prefer compact handoffs from `explorer`, `librarian`, `fixer`, and `oracle` over copying large raw outputs into the main session.
-
-## Cache behavior
-
-Tool outputs are saved to a session-scoped cache under:
-
-- `$HOME/.cache/pi/tools/<session-dir>/<session-file-stem>/...`
-
-Rules:
-
-1. Tool calls return a preview plus a cache file path.
-2. The cache file contains the full tool output.
-3. Tool cache is ephemeral and clears on session shutdown.
+4. Avoid repeated fetches for the same page unless necessary.
+5. Do not call both Context7 and Exa for the same simple question unless the first source is insufficient.
+6. Do not reintroduce persisted session-plan files as the primary workflow.
+7. Prefer compact handoffs from `explorer`, `librarian`, `fixer`, and `oracle` over copying large raw outputs into the main session.
 
 ## Working on this project
 
 1. Keep tool interfaces simple.
 2. Prefer fetch-based integrations over MCP in this repo unless requirements change.
 3. Preserve context-efficiency behavior when modifying tools.
-4. If adding new tools, make them cache-aware and return compact previews when appropriate.
+4. If adding new tools, return compact previews by default when appropriate.
 5. If a change increases output verbosity, justify it and keep the default path compact.
 6. Keep the runtime workflow explicit: `/plan` for read-only planning, then execute with tracked `[DONE:n]` steps when ready.

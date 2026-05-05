@@ -113,7 +113,6 @@ extensions/
     index.ts
     agents.ts
   tools/
-    cache.ts
     context7.ts
     exa.ts
 prompts/
@@ -138,7 +137,7 @@ skills/
 ```
 
 ```text
-Use subagent with agent explorer to trace where tool cache paths are produced.
+Use subagent with agent explorer to trace where tool output is formatted and truncated.
 ```
 
 ```text

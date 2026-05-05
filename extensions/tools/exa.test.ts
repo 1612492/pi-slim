@@ -182,7 +182,7 @@ describe("exa tools", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
 
-    const tool = createWebSearchExaTool(() => "demo");
+    const tool = createWebSearchExaTool();
     const result = await tool.execute(
       "1",
       { query: "hello" },
@@ -212,7 +212,7 @@ describe("exa tools", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
 
-    const tool = createWebFetchExaTool(() => "demo");
+    const tool = createWebFetchExaTool();
     const result = await tool.execute(
       "1",
       { url: "https://example.com" },

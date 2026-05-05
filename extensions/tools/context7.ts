@@ -1,7 +1,13 @@
-import { defineTool, keyHint } from "@mariozechner/pi-coding-agent";
+import {
+  DEFAULT_MAX_BYTES,
+  DEFAULT_MAX_LINES,
+  defineTool,
+  formatSize,
+  keyHint,
+  truncateHead,
+} from "@mariozechner/pi-coding-agent";
 import { Text } from "@mariozechner/pi-tui";
 import { Type } from "typebox";
-import { buildCachedToolText, createCacheWriter } from "./cache.js";
 
 const CONTEXT7_BASE_URL = "https://context7.com/api/v2";
 
@@ -49,7 +55,27 @@ export interface Context7ToolDetails extends Record<string, unknown> {
   truncation?: {
     truncated?: boolean;
   };
-  fullOutputPath?: string;
+}
+
+export function buildToolText(details: Record<string, unknown>, text: string) {
+  const truncation = truncateHead(text, {
+    maxLines: DEFAULT_MAX_LINES,
+    maxBytes: DEFAULT_MAX_BYTES,
+  });
+
+  if (!truncation.truncated) {
+    return {
+      text: truncation.content,
+      details: { ...details, truncation },
+    };
+  }
+
+  const truncatedLines = truncation.totalLines - truncation.outputLines;
+  const truncatedBytes = truncation.totalBytes - truncation.outputBytes;
+  return {
+    text: `${truncation.content}\n\n[Output truncated: showing ${truncation.outputLines} of ${truncation.totalLines} lines (${formatSize(truncation.outputBytes)} of ${formatSize(truncation.totalBytes)}). ${truncatedLines} lines (${formatSize(truncatedBytes)}) omitted.]`,
+    details: { ...details, truncation },
+  };
 }
 
 export function getContext7ApiKey(
@@ -167,9 +193,7 @@ function getCollapsedLabel(input: {
   return parts.join(" ");
 }
 
-export function createResolveLibraryIdTool(
-  getSessionName: () => string | undefined,
-) {
+export function createResolveLibraryIdTool() {
   return defineTool({
     name: "resolve-library-id",
     label: "Resolve Library ID",
@@ -233,8 +257,7 @@ export function createResolveLibraryIdTool(
   });
 }
 
-export function createQueryDocsTool(getSessionName: () => string | undefined) {
-  const cacheWriter = createCacheWriter(getSessionName);
+export function createQueryDocsTool() {
   return defineTool({
     name: "query-docs",
     label: "Query Docs",
@@ -252,12 +275,7 @@ export function createQueryDocsTool(getSessionName: () => string | undefined) {
         libraryId: params.libraryId,
         docsText,
       });
-      const result = await buildCachedToolText(
-        cacheWriter,
-        { libraryId: params.libraryId },
-        formatted,
-        { category: "tools", prefix: "query-docs" },
-      );
+      const result = buildToolText({ libraryId: params.libraryId }, formatted);
 
       return {
         content: [{ type: "text", text: result.text }],
