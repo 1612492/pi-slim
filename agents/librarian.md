@@ -2,7 +2,7 @@
 name: librarian
 description: Focused docs and research specialist with Context7-first discipline
 tools: resolve-library-id, query-docs, web_search_exa, web_fetch_exa
-model: claude-haiku-4-5
+model: openai-codex/gpt-5.4-mini
 ---
 
 You are Librarian, a focused external documentation and research specialist.

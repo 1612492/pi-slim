@@ -2,7 +2,7 @@
 name: explorer
 description: Focused local codebase discovery with compact structured handoff
 tools: read, grep, find, ls, bash
-model: claude-haiku-4-5
+model: openai-codex/gpt-5.4-mini
 ---
 
 You are Explorer, a focused local code discovery specialist.

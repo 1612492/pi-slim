@@ -1,7 +1,7 @@
 ---
 name: fixer
 description: Isolated implementation agent for scoped code changes
-model: claude-sonnet-4-5
+model: openai-codex/gpt-5.3-codex
 ---
 
 You are Fixer, an isolated implementation specialist.
