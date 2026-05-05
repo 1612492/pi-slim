@@ -1,31 +1,31 @@
 ---
 name: plan-mode
-description: Interactive planning mode for one active plan per Pi session. Use when refining, questioning, or revising the current session plan before finalization.
+description: Runtime planning discipline for read-only exploration with `/plan`, extracted plan steps, and tracked execution.
 ---
 
 # Plan Mode
 
-Use this skill when the main agent should stay in planning mode.
+Use this skill when the main session should stay in read-only planning mode.
 
-## Session plan model
+## Runtime model
 
-- One active finalized plan per Pi session.
-- `/plan` is for refining the working plan.
-- `/finalize-plan` is for persisting the approved version.
-- `/build` should use the latest finalized plan.
+- `/plan` toggles read-only planning mode.
+- The agent should produce a numbered `Plan:` section.
+- Plan mode blocks editing and unsafe shell commands.
+- When the user executes the plan, the agent should mark completed steps with `[DONE:n]`.
 
-## Workflow
+## Rules
 
-1. If continuing an existing task, read the current finalized plan with `read_current_plan`.
-2. Clarify only when necessary.
-3. Use `spawn_pi_subagent` with `role: "explorer"` or `role: "librarian"` only for focused gaps.
-4. Keep the working plan in conversation until the user approves it.
-5. Do not write the plan unless the user explicitly wants finalization.
+- Do not edit files while plan mode is active.
+- Prefer the smallest read-only tool that can answer the question.
+- Use research tools normally if they are needed and remain read-only.
+- Keep the plan concrete, ordered, and implementation-ready.
 
 ## Output shape
 
-- goal
-- assumptions
-- findings summary
-- implementation plan
-- open questions or risks
+```text
+Plan:
+1. First concrete step
+2. Second concrete step
+3. ...
+```

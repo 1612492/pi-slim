@@ -1,11 +1,11 @@
 ---
 name: librarian-research
-description: External documentation and web research discipline for focused librarian child Pi runs. Use when Context7 or Exa is needed without editing code.
+description: External documentation and web research discipline for the librarian subagent. Use when Context7 or Exa is needed without editing code.
 ---
 
 # Librarian Research
 
-Use this skill when creating or interpreting a `librarian` child Pi run.
+Use this skill when creating or interpreting a `librarian` subagent run.
 
 ## Default source order
 

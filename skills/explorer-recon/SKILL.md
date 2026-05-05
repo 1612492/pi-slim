@@ -1,11 +1,11 @@
 ---
 name: explorer-recon
-description: Local code discovery discipline for focused explorer child Pi runs. Use when you need narrow codebase reconnaissance without editing files.
+description: Local code discovery discipline for the explorer subagent. Use when you need narrow codebase reconnaissance without editing files.
 ---
 
 # Explorer Recon
 
-Use this skill when creating or interpreting an `explorer` child Pi run.
+Use this skill when creating or interpreting an `explorer` subagent run.
 
 ## Explorer scope
 

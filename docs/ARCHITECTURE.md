@@ -2,167 +2,84 @@
 
 ## Goal
 
-Optimize for context efficiency by making planning the default entry point for retrieval, keeping execution focused, and storing large outputs outside the main conversation flow.
+Optimize for context efficiency with a runtime planning mode and isolated specialist subagents.
 
 ## Recommended flow
 
 ```text
-Planner
-  ├─ drafts/revises working plan in conversation
-  ├─ finalizes current-plan.md + plan-vN.md
-  ├─ calls Explorer for local code discovery
-  └─ calls Librarian for external docs/research
+Main Session
+  ├─ /plan enables read-only planning
+  ├─ drafts a numbered Plan:
+  ├─ executes with [DONE:n] tracking when approved
+  ├─ calls Explorer for local code discovery when needed
+  ├─ calls Librarian for docs/research when needed
+  ├─ calls Fixer for isolated implementation when needed
+  └─ calls Oracle for review or strategic guidance when needed
 
 Explorer
-  ├─ glob / grep / rg / find-like search
-  └─ ast-grep
+  └─ local search + targeted file reads
 
 Librarian
-  ├─ Context7 for library/framework docs
-  ├─ Exa for general web research
-  └─ grep.app for real-world code examples
+  └─ Context7-first docs + Exa research
 
-Explorer/Librarian outputs
-  ├─ compact preview for immediate use
-  └─ cached tool file for full results
+Fixer
+  └─ scoped implementation in isolated context
 
-Builder
-  ├─ reads current-plan.md for this session
-  ├─ consumes plan + previews + cache references
-  └─ performs implementation
+Oracle
+  └─ review, risk analysis, and simplification guidance
 ```
 
-## Session plan lifecycle
+## Plan mode lifecycle
 
-One active plan exists per Pi session.
+Plan mode is runtime state, not a persisted file workflow.
 
 ```text
 /plan
-  └─ refine working plan in conversation
+  ├─ enables read-only planning
+  ├─ restricts tools
+  ├─ blocks unsafe bash commands
+  └─ asks the agent for a numbered Plan:
 
-/finalize-plan
-  ├─ write <task-slug>-vN.md
-  └─ update current-plan.md
-
-/build
-  └─ read current-plan.md and implement from it
+execute plan
+  ├─ restores full tool access
+  └─ tracks completion with [DONE:n]
 ```
 
-If build is interrupted, the user can return to `/plan`, revise the plan, `/finalize-plan` again, then `/build` continues from the newer finalized plan.
-
-## Core rule
-
-`Builder` should usually take a plan from `Planner` instead of calling `Explorer` and `Librarian` directly.
-
-This is more context-efficient because it:
-
-- avoids duplicate searches
-- avoids duplicate external lookups
-- keeps `Builder` focused on execution
-- makes caching and reuse simpler
-- reduces unnecessary context expansion
-
-## Why not make Builder fully dependent on Planner?
-
-A strict ban on direct `Builder` lookups is too rigid.
-
-During implementation, `Builder` may discover:
-
-- a missing symbol
-- an unclear file location
-- a docs gap
-- an edge case that needs one small follow-up query
-
-In those cases, a narrow direct lookup can be cheaper than sending control back through full replanning.
-
-## Recommended policy
-
-### Default behavior
-
-1. `Planner` decides what information is needed.
-2. If this session already has a finalized plan, `Planner` can read it and revise from that baseline.
-3. `Planner` calls `Explorer` and/or `Librarian`.
-4. They return:
-   - a small preview
-   - a cache path or tool file reference
-5. `/finalize-plan` writes the approved canonical plan for this session.
-6. `Builder` receives the plan plus those references.
-7. `Builder` implements using that narrowed context.
-
-### Exception behavior
-
-`Builder` may call retrieval tools directly only for small follow-up queries.
-
-Examples:
-
-- resolve one symbol
-- check one nearby file
-- verify one API detail
-
-### Escalation rule
-
-If `Builder` needs a broad search, multiple lookups, or new research scope, route back through `Planner`.
-
-## Retrieval boundaries
-
-### Planner
-
-- owns orchestration
-- decides whether local search or external research is needed
-- prevents redundant retrieval
-- revises the session plan
-- finalizes the canonical plan only when explicitly asked
+## Subagent roles
 
 ### Explorer
 
-- handles local codebase discovery
-- returns minimal summaries first
-- stores full outputs in tool files
+- local discovery only
+- compact file-and-symbol handoff
 
 ### Librarian
 
-- handles external docs and research
-- prefers Context7 for normal software docs
-- uses Exa for broader web research
-- uses grep.app for real-world code examples
-- returns minimal summaries first
+- Context7 first for software docs
+- Exa only when needed
+- source-grounded conclusions
 
-### Builder
+### Fixer
 
-- should consume planned context first
-- should read the latest finalized session plan first
-- should avoid broad rediscovery
-- may perform narrow corrective lookup when cheaper than replanning
+- bounded implementation work
+- concise files-changed and verification notes
+
+### Oracle
+
+- review and risk analysis
+- tradeoff and simplification guidance
+- read-only inspection only
 
 ## Context-efficiency principles
 
-- preview first, full result on demand
-- cache every large tool output
-- keep one active finalized plan per session
-- pass references, not large payloads
-- avoid repeated fetches for the same question
-- prefer one orchestrated retrieval path by default
-- let execution use narrowed context, not raw search output
+- prefer read-only planning before execution
+- prefer the smallest retrieval path that answers the question
+- prefer compact handoffs over raw output dumps
+- prefer isolated implementation or review when it reduces main-session context growth
+- prefer Context7 before web search for library docs
 
 ## Anti-patterns
 
-Avoid these patterns:
-
-- `Planner` and `Builder` both running the same searches
-- `Builder` doing broad discovery by default
-- implementing without a finalized plan when the workflow expects one
-- always loading full tool files into context
-- using external search before targeted docs lookup when docs are enough
-- creating many isolated tool files without preview/reference discipline
-
-## Summary
-
-Best design:
-
-- `Planner` is the default retrieval orchestrator.
-- One active finalized plan exists per Pi session.
-- `/finalize-plan` writes `current-plan.md` plus a meaningful task-based versioned snapshot.
-- `Builder` consumes the plan and cached references.
-- `Builder` can do limited direct lookup only as an exception.
-
-This gives better context efficiency than letting `Builder` independently call `Explorer` and `Librarian` for normal work.
+- reintroducing persisted `current-plan.md` workflow
+- using `fixer` or `subagent` during plan mode to bypass read-only restrictions
+- broad rediscovery when a focused subagent handoff is enough
+- using web search first for ordinary software docs questions
