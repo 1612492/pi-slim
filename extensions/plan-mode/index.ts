@@ -18,6 +18,7 @@ const PLAN_MODE_TOOLS = [
   "grep",
   "find",
   "ls",
+  "questionnaire",
   "resolve-library-id",
   "query-docs",
   "web_search_exa",
@@ -187,7 +188,7 @@ export default function planModeExtension(pi: ExtensionAPI): void {
       return {
         message: {
           customType: "plan-mode-context",
-          content: `[PLAN MODE ACTIVE]\nYou are in plan mode - a read-only exploration mode for safe code analysis.\n\nRestrictions:\n- You can only use read-only tools currently enabled for planning.\n- You CANNOT edit or write files.\n- Bash is restricted to an allowlist of read-only commands.\n\nCreate a detailed numbered plan under a \"Plan:\" header:\n\nPlan:\n1. First step description\n2. Second step description\n...\n\nDo NOT attempt to make changes - just describe what you would do.`,
+          content: `[PLAN MODE ACTIVE]\nYou are in plan mode - a read-only exploration mode for safe code analysis.\n\nRestrictions:\n- You can only use read-only tools currently enabled for planning.\n- You CANNOT edit or write files.\n- Bash is restricted to an allowlist of read-only commands.\n\nIf requirements are ambiguous, ask clarifying questions with the questionnaire tool before finalizing the plan.\n\nCreate a detailed numbered plan under a \"Plan:\" header:\n\nPlan:\n1. First step description\n2. Second step description\n...\n\nDo NOT attempt to make changes - just describe what you would do.`,
           display: false,
         },
       };

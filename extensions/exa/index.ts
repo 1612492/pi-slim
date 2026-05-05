@@ -1,3 +1,4 @@
+import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import {
   DEFAULT_MAX_BYTES,
   DEFAULT_MAX_LINES,
@@ -361,4 +362,9 @@ export function createWebFetchExaTool() {
       return new Text(summary, 0, 0);
     },
   });
+}
+
+export default function exaExtension(pi: ExtensionAPI) {
+  pi.registerTool(createWebSearchExaTool());
+  pi.registerTool(createWebFetchExaTool());
 }

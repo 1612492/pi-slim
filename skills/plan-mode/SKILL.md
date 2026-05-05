@@ -18,6 +18,7 @@ Use this skill when the main session should stay in read-only planning mode.
 
 - Do not edit files while plan mode is active.
 - Prefer the smallest read-only tool that can answer the question.
+- If requirements are ambiguous, ask clarifying questions with `questionnaire`.
 - Use research tools normally if they are needed and remain read-only.
 - Keep the plan concrete, ordered, and implementation-ready.
 

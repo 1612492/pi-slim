@@ -11,12 +11,14 @@ Minimal Pi package focused on context-efficient docs lookup, runtime plan mode, 
 - `web_search_exa`
 - `web_fetch_exa`
 - `subagent`
+- `questionnaire`
 
 ### Runtime workflow
 
 - `/plan` toggles read-only planning mode
 - numbered `Plan:` sections are extracted into tracked todos
 - execution mode tracks step completion with `[DONE:n]`
+- ambiguous planning questions can use `questionnaire`
 
 ### Repo-owned subagents
 
@@ -48,6 +50,7 @@ Plan mode is runtime state, not a persisted plan file workflow.
 - `/plan` enables read-only exploration.
 - Only read-only tools remain active.
 - Unsafe bash commands are blocked.
+- If requirements are ambiguous, plan mode can ask structured clarifying questions with `questionnaire`.
 - The agent should respond with a numbered `Plan:` section.
 - After planning, the UI can switch into execution mode.
 - During execution, the agent marks completed steps with `[DONE:n]`.
@@ -106,15 +109,20 @@ agents/
   oracle.md
 extensions/
   index.ts
+  context7/
+    index.ts
+    index.test.ts
+  exa/
+    index.ts
+    index.test.ts
+  permission-gate/
+    index.ts
   plan-mode/
     index.ts
     utils.ts
   subagent/
     index.ts
     agents.ts
-  tools/
-    context7.ts
-    exa.ts
 prompts/
   explore.md
   research.md

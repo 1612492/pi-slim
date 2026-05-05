@@ -1,3 +1,4 @@
+import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import {
   DEFAULT_MAX_BYTES,
   DEFAULT_MAX_LINES,
@@ -315,4 +316,9 @@ export function createQueryDocsTool() {
       return new Text(summary, 0, 0);
     },
   });
+}
+
+export default function context7Extension(pi: ExtensionAPI) {
+  pi.registerTool(createResolveLibraryIdTool());
+  pi.registerTool(createQueryDocsTool());
 }

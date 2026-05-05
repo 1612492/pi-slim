@@ -9,6 +9,7 @@ Optimize for context efficiency with a runtime planning mode and isolated specia
 ```text
 Main Session
   ├─ /plan enables read-only planning
+  ├─ asks clarifying questions with questionnaire when needed
   ├─ drafts a numbered Plan:
   ├─ executes with [DONE:n] tracking when approved
   ├─ calls Explorer for local code discovery when needed
@@ -38,6 +39,7 @@ Plan mode is runtime state, not a persisted file workflow.
   ├─ enables read-only planning
   ├─ restricts tools
   ├─ blocks unsafe bash commands
+  ├─ uses questionnaire for ambiguity when needed
   └─ asks the agent for a numbered Plan:
 
 execute plan
