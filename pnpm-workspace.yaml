@@ -1,5 +1,5 @@
 allowBuilds:
-  '@google/genai': true
+  "@google/genai": true
   esbuild: set this to true or false
   koffi: set this to true or false
   protobufjs: true

@@ -316,7 +316,7 @@ export default function subagentExtension(pi: ExtensionAPI) {
       'Use `agent: "librarian"` for docs lookup or external research when isolated context is useful.',
       'Use `agent: "fixer"` for bounded implementation work that should stay out of the main session.',
       'Use `agent: "oracle"` for review, risk analysis, or strategy guidance.',
-      'Use `chain` with fixer -> oracle -> fixer when the user wants implementation, review, then follow-up fixes.',
+      "Use `chain` with fixer -> oracle -> fixer when the user wants implementation, review, then follow-up fixes.",
     ],
     parameters: SubagentParams,
 
