@@ -1,9 +1,9 @@
 ---
-name: fixer-execution
+name: fixer
 description: Guidance for using the fixer subagent for isolated implementation work.
 ---
 
-# Fixer Execution
+# Fixer
 
 Use this skill when delegating implementation to the `fixer` subagent.
 

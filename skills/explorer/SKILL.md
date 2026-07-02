@@ -1,9 +1,9 @@
 ---
-name: explorer-recon
+name: explorer
 description: Local code discovery discipline for the explorer subagent. Use when you need narrow codebase reconnaissance without editing files.
 ---
 
-# Explorer Recon
+# Explorer
 
 Use this skill when creating or interpreting an `explorer` subagent run.
 

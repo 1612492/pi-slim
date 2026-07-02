@@ -1,4 +1,4 @@
-import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
+import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import context7Extension from "./context7/index.js";
 import exaExtension from "./exa/index.js";
 import permissionGateExtension from "./permission-gate/index.js";

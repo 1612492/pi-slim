@@ -28,7 +28,7 @@ Trace where tool output is formatted and truncated.
 Recommended flow:
 
 ```text
-Use subagent with agent explorer to trace where tool output is formatted and truncated.
+Trace where tool output is formatted and truncated. Use the explorer subagent if helpful.
 ```
 
 ## Example 3: Context7-first docs research
@@ -47,7 +47,7 @@ Recommended flow:
 Or, if you want isolated research:
 
 ```text
-Use subagent with agent librarian to research Next.js App Router caching behavior.
+Research Next.js App Router caching behavior in isolated context.
 ```
 
 ## Example 4: Isolated implementation
@@ -61,7 +61,7 @@ Implement a scoped fix without polluting the main session.
 Recommended flow:
 
 ```text
-Use subagent with agent fixer to implement the change.
+Implement the change in isolated context.
 ```
 
 ## Example 5: Implement and review
@@ -75,5 +75,5 @@ Implement the change, then review it, then apply the review feedback.
 Recommended flow:
 
 ```text
-Use subagent with a fixer -> oracle -> fixer chain.
+Implement the change, review it, then apply the review feedback in isolated context.
 ```

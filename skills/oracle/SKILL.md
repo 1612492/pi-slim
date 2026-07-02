@@ -1,9 +1,9 @@
 ---
-name: oracle-review
+name: oracle
 description: Guidance for using the oracle subagent for review, risk analysis, and simplification.
 ---
 
-# Oracle Review
+# Oracle
 
 Use this skill when delegating code review or architecture scrutiny to `oracle`.
 

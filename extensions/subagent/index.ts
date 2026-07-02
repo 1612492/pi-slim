@@ -2,9 +2,9 @@ import { spawn } from "node:child_process";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import type { Message } from "@mariozechner/pi-ai";
-import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
-import { getMarkdownTheme } from "@mariozechner/pi-coding-agent";
+import type { Message } from "@earendil-works/pi-ai";
+import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { getMarkdownTheme } from "@earendil-works/pi-coding-agent";
 import { Container, Markdown, Spacer, Text } from "@mariozechner/pi-tui";
 import { Type } from "typebox";
 import { discoverAgents, type AgentConfig, type AgentScope } from "./agents.js";
@@ -309,6 +309,15 @@ export default function subagentExtension(pi: ExtensionAPI) {
     label: "Subagent",
     description:
       "Delegate tasks to specialized subagents with isolated context. Supports single, parallel, and chain modes.",
+    promptSnippet: "Delegate focused work to a specialized subagent",
+    promptGuidelines: [
+      "Use subagent when the user asks in normal chat for focused exploration, isolated research, scoped implementation, or targeted review.",
+      'Use `agent: "explorer"` for local code discovery, tracing behavior, or finding where something is implemented.',
+      'Use `agent: "librarian"` for docs lookup or external research when isolated context is useful.',
+      'Use `agent: "fixer"` for bounded implementation work that should stay out of the main session.',
+      'Use `agent: "oracle"` for review, risk analysis, or strategy guidance.',
+      'Use `chain` with fixer -> oracle -> fixer when the user wants implementation, review, then follow-up fixes.',
+    ],
     parameters: SubagentParams,
 
     async execute(_toolCallId, params, _signal, _onUpdate, ctx) {

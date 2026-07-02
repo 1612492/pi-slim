@@ -27,14 +27,6 @@ Minimal Pi package focused on context-efficient docs lookup, runtime plan mode, 
 - `fixer` - isolated implementation
 - `oracle` - review, risk analysis, and simplification guidance
 
-### Prompt templates
-
-- `/explore`
-- `/research`
-- `/fix`
-- `/oracle`
-- `/fix-and-oracle`
-
 ## Design goals
 
 1. Prefer the smallest tool that can answer the question.
@@ -123,17 +115,11 @@ extensions/
   subagent/
     index.ts
     agents.ts
-prompts/
-  explore.md
-  research.md
-  fix.md
-  oracle.md
-  fix-and-oracle.md
 skills/
-  explorer-recon/
-  librarian-research/
-  fixer-execution/
-  oracle-review/
+  explorer/
+  librarian/
+  fixer/
+  oracle/
   plan-mode/
   research-tools/
 ```
@@ -141,13 +127,13 @@ skills/
 ## Example usage
 
 ```text
-/plan
+Trace where tool output is formatted and truncated. Use the explorer subagent if helpful.
 ```
 
 ```text
-Use subagent with agent explorer to trace where tool output is formatted and truncated.
+Research Next.js App Router caching behavior in isolated context.
 ```
 
 ```text
-Use subagent with a fixer -> oracle -> fixer chain to implement and review a change.
+Implement the change, review it, then apply the review feedback in isolated context.
 ```

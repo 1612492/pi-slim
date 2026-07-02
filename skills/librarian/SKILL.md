@@ -1,9 +1,9 @@
 ---
-name: librarian-research
+name: librarian
 description: External documentation and web research discipline for the librarian subagent. Use when Context7 or Exa is needed without editing code.
 ---
 
-# Librarian Research
+# Librarian
 
 Use this skill when creating or interpreting a `librarian` subagent run.
 
