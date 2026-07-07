@@ -17,25 +17,26 @@ interface QuestionOption {
 
 type RenderOption = QuestionOption & { isOther?: boolean };
 
+type QuestionAnswer = {
+  id: string;
+  values: string[];
+  labels: string[];
+  custom?: string;
+  selectedIndices?: number[];
+};
+
 interface Question {
   id: string;
   label: string;
   prompt: string;
   options: QuestionOption[];
   allowOther: boolean;
-}
-
-interface Answer {
-  id: string;
-  value: string;
-  label: string;
-  wasCustom: boolean;
-  index?: number;
+  multiple: boolean;
 }
 
 interface QuestionnaireResult {
   questions: Question[];
-  answers: Answer[];
+  answers: QuestionAnswer[];
   cancelled: boolean;
 }
 
@@ -62,6 +63,11 @@ const QuestionSchema = Type.Object({
   allowOther: Type.Optional(
     Type.Boolean({
       description: "Allow 'Type something' option (default: true)",
+    }),
+  ),
+  multiple: Type.Optional(
+    Type.Boolean({
+      description: "Allow multiple selected options (default: false)",
     }),
   ),
 });
@@ -104,6 +110,7 @@ export default function questionnaireExtension(pi: ExtensionAPI) {
         ...question,
         label: question.label || `Q${index + 1}`,
         allowOther: question.allowOther !== false,
+        multiple: question.multiple === true,
       }));
 
       const isMulti = questions.length > 1;
@@ -116,7 +123,7 @@ export default function questionnaireExtension(pi: ExtensionAPI) {
           let inputMode = false;
           let inputQuestionId: string | null = null;
           let cachedLines: string[] | undefined;
-          const answers = new Map<string, Answer>();
+          const answers = new Map<string, QuestionAnswer>();
 
           const editorTheme: EditorTheme = {
             borderColor: (segment) => theme.fg("accent", segment),
@@ -151,6 +158,9 @@ export default function questionnaireExtension(pi: ExtensionAPI) {
             const question = currentQuestion();
             if (!question) return [];
             const options: RenderOption[] = [...question.options];
+            if (question.multiple) {
+              options.push({ value: "__done__", label: "Done / continue" });
+            }
             if (question.allowOther) {
               options.push({
                 value: "__other__",
@@ -159,10 +169,6 @@ export default function questionnaireExtension(pi: ExtensionAPI) {
               });
             }
             return options;
-          }
-
-          function allAnswered(): boolean {
-            return questions.every((question) => answers.has(question.id));
           }
 
           function advanceAfterAnswer() {
@@ -179,30 +185,85 @@ export default function questionnaireExtension(pi: ExtensionAPI) {
             refresh();
           }
 
-          function saveAnswer(
-            questionId: string,
-            value: string,
-            label: string,
-            wasCustom: boolean,
-            index?: number,
+          function saveAnswer(questionId: string, answer: QuestionAnswer) {
+            answers.set(questionId, answer);
+          }
+
+          function currentAnswer(questionId: string): QuestionAnswer {
+            return (
+              answers.get(questionId) || {
+                id: questionId,
+                values: [],
+                labels: [],
+              }
+            );
+          }
+
+          function hasAnswer(questionId: string): boolean {
+            const answer = answers.get(questionId);
+            return !!answer && (answer.values.length > 0 || !!answer.custom);
+          }
+
+          function allAnswered(): boolean {
+            return questions.every((question) => hasAnswer(question.id));
+          }
+
+          function toggleOption(
+            question: Question,
+            option: RenderOption,
+            index: number,
           ) {
-            answers.set(questionId, {
-              id: questionId,
-              value,
-              label,
-              wasCustom,
-              index,
-            });
+            const answer = currentAnswer(question.id);
+            const next: QuestionAnswer = {
+              ...answer,
+              id: question.id,
+              values: [...answer.values],
+              labels: [...answer.labels],
+              selectedIndices: answer.selectedIndices
+                ? [...answer.selectedIndices]
+                : [],
+            };
+            const existingIndex = next.values.indexOf(option.value);
+            if (existingIndex >= 0) {
+              next.values.splice(existingIndex, 1);
+              next.labels.splice(existingIndex, 1);
+              next.selectedIndices = next.selectedIndices?.filter(
+                (i) => i !== index + 1,
+              );
+            } else {
+              next.values.push(option.value);
+              next.labels.push(option.label);
+              next.selectedIndices?.push(index + 1);
+            }
+            saveAnswer(question.id, next);
+          }
+
+          function finalizeMulti(question: Question) {
+            const answer = answers.get(question.id);
+            if (!answer || (answer.values.length === 0 && !answer.custom))
+              return;
+            advanceAfterAnswer();
           }
 
           editor.onSubmit = (value) => {
             if (!inputQuestionId) return;
+            const questionId = inputQuestionId;
             const trimmed = value.trim() || "(no response)";
-            saveAnswer(inputQuestionId, trimmed, trimmed, true);
+            const existing = currentAnswer(questionId);
+            saveAnswer(questionId, {
+              ...existing,
+              id: questionId,
+              custom: trimmed,
+            });
             inputMode = false;
+            const question = questions.find((q) => q.id === questionId);
             inputQuestionId = null;
             editor.setText("");
-            advanceAfterAnswer();
+            if (question?.multiple) {
+              refresh();
+            } else {
+              advanceAfterAnswer();
+            }
           };
 
           function handleInput(data: string) {
@@ -269,13 +330,21 @@ export default function questionnaireExtension(pi: ExtensionAPI) {
                 refresh();
                 return;
               }
-              saveAnswer(
-                question.id,
-                option.value,
-                option.label,
-                false,
-                optionIndex + 1,
-              );
+              if (option.value === "__done__" && question.multiple) {
+                finalizeMulti(question);
+                return;
+              }
+              if (question.multiple) {
+                toggleOption(question, option, optionIndex);
+                refresh();
+                return;
+              }
+              saveAnswer(question.id, {
+                id: question.id,
+                values: [option.value],
+                labels: [option.label],
+                selectedIndices: [optionIndex + 1],
+              });
               advanceAfterAnswer();
               return;
             }
@@ -300,7 +369,7 @@ export default function questionnaireExtension(pi: ExtensionAPI) {
               const tabs: string[] = ["← "];
               for (let index = 0; index < questions.length; index++) {
                 const isActive = index === currentTab;
-                const isAnswered = answers.has(questions[index].id);
+                const isAnswered = hasAnswer(questions[index].id);
                 const label = questions[index].label;
                 const box = isAnswered ? "■" : "□";
                 const color = isAnswered ? "success" : "muted";
@@ -326,8 +395,15 @@ export default function questionnaireExtension(pi: ExtensionAPI) {
                 const option = options[index];
                 const selected = index === optionIndex;
                 const isOther = option.isOther === true;
+                const answer = question ? answers.get(question.id) : undefined;
+                const isSelected =
+                  !!answer && answer.values.includes(option.value);
                 const prefix = selected ? theme.fg("accent", "> ") : "  ";
-                const color = selected ? "accent" : "text";
+                const color = selected
+                  ? "accent"
+                  : isSelected
+                    ? "success"
+                    : "text";
                 if (isOther && inputMode) {
                   add(
                     prefix +
@@ -335,7 +411,11 @@ export default function questionnaireExtension(pi: ExtensionAPI) {
                   );
                 } else {
                   add(
-                    prefix + theme.fg(color, `${index + 1}. ${option.label}`),
+                    prefix +
+                      theme.fg(
+                        color,
+                        `${isSelected ? "✓ " : ""}${index + 1}. ${option.label}`,
+                      ),
                   );
                 }
                 if (option.description) {
@@ -361,9 +441,15 @@ export default function questionnaireExtension(pi: ExtensionAPI) {
               for (const questionItem of questions) {
                 const answer = answers.get(questionItem.id);
                 if (answer) {
-                  const prefix = answer.wasCustom ? "(wrote) " : "";
+                  const items = [
+                    ...answer.labels.map(
+                      (label, idx) =>
+                        `${answer.selectedIndices?.[idx] ?? idx + 1}. ${label}`,
+                    ),
+                    ...(answer.custom ? [`(wrote) ${answer.custom}`] : []),
+                  ];
                   add(
-                    `${theme.fg("muted", ` ${questionItem.label}: `)}${theme.fg("text", prefix + answer.label)}`,
+                    `${theme.fg("muted", ` ${questionItem.label}: `)}${theme.fg("text", items.join(", "))}`,
                   );
                 }
               }
@@ -372,7 +458,7 @@ export default function questionnaireExtension(pi: ExtensionAPI) {
                 add(theme.fg("success", " Press Enter to submit"));
               } else {
                 const missing = questions
-                  .filter((questionItem) => !answers.has(questionItem.id))
+                  .filter((questionItem) => !hasAnswer(questionItem.id))
                   .map((questionItem) => questionItem.label)
                   .join(", ");
                 add(theme.fg("warning", ` Unanswered: ${missing}`));
@@ -385,9 +471,13 @@ export default function questionnaireExtension(pi: ExtensionAPI) {
 
             lines.push("");
             if (!inputMode) {
-              const help = isMulti
-                ? " Tab/←→ navigate • ↑↓ select • Enter confirm • Esc cancel"
-                : " ↑↓ navigate • Enter select • Esc cancel";
+              const help = question?.multiple
+                ? isMulti
+                  ? " Tab/←→ navigate • ↑↓ select • Enter toggle • choose Done / continue when finished • Esc cancel"
+                  : " ↑↓ navigate • Enter toggle • choose Done / continue when finished • Esc cancel"
+                : isMulti
+                  ? " Tab/←→ navigate • ↑↓ select • Enter confirm • Esc cancel"
+                  : " ↑↓ navigate • Enter select • Esc cancel";
               add(theme.fg("dim", help));
             }
             add(theme.fg("accent", "─".repeat(width)));
@@ -417,10 +507,14 @@ export default function questionnaireExtension(pi: ExtensionAPI) {
         const questionLabel =
           questions.find((question) => question.id === answer.id)?.label ||
           answer.id;
-        if (answer.wasCustom) {
-          return `${questionLabel}: user wrote: ${answer.label}`;
-        }
-        return `${questionLabel}: user selected: ${answer.index}. ${answer.label}`;
+        const parts = [
+          ...answer.labels.map(
+            (label, index) =>
+              `selected: ${answer.selectedIndices?.[index] ?? index + 1}. ${label}`,
+          ),
+          ...(answer.custom ? [`wrote: ${answer.custom}`] : []),
+        ];
+        return `${questionLabel}: ${parts.join("; ")}`;
       });
 
       return {
@@ -453,12 +547,13 @@ export default function questionnaireExtension(pi: ExtensionAPI) {
         return new Text(theme.fg("warning", "Cancelled"), 0, 0);
       }
       const lines = details.answers.map((answer) => {
-        if (answer.wasCustom) {
-          return `${theme.fg("success", "✓ ")}${theme.fg("accent", answer.id)}: ${theme.fg("muted", "(wrote) ")}${answer.label}`;
-        }
-        const display = answer.index
-          ? `${answer.index}. ${answer.label}`
-          : answer.label;
+        const display = [
+          ...answer.labels.map(
+            (label, index) =>
+              `${answer.selectedIndices?.[index] ?? index + 1}. ${label}`,
+          ),
+          ...(answer.custom ? [`(wrote) ${answer.custom}`] : []),
+        ].join(", ");
         return `${theme.fg("success", "✓ ")}${theme.fg("accent", answer.id)}: ${display}`;
       });
       return new Text(lines.join("\n"), 0, 0);

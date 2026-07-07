@@ -106,16 +106,15 @@ describe("questionnaire extension", () => {
       answers: [
         {
           id: "scope",
-          value: "small",
-          label: "Small",
-          wasCustom: false,
-          index: 1,
+          values: ["small"],
+          labels: ["Small"],
+          selectedIndices: [1],
         },
         {
           id: "priority",
-          value: "urgent",
-          label: "urgent",
-          wasCustom: true,
+          values: [],
+          labels: [],
+          custom: "urgent",
         },
       ],
       cancelled: false,
@@ -150,7 +149,7 @@ describe("questionnaire extension", () => {
     expect(custom).toHaveBeenCalledOnce();
     expect(custom.mock.calls[0]?.[0]).toBeTypeOf("function");
     expect(result.content[0]?.text).toBe(
-      "Q1: user selected: 1. Small\nPriority: user wrote: urgent",
+      "Q1: selected: 1. Small\nPriority: wrote: urgent",
     );
     expect(result.details.cancelled).toBe(false);
   });
@@ -250,16 +249,15 @@ describe("questionnaire extension", () => {
           answers: [
             {
               id: "scope",
-              value: "small",
-              label: "Small",
-              wasCustom: false,
-              index: 1,
+              values: ["small"],
+              labels: ["Small"],
+              selectedIndices: [1],
             },
             {
               id: "priority",
-              value: "urgent",
-              label: "urgent",
-              wasCustom: true,
+              values: [],
+              labels: [],
+              custom: "urgent",
             },
           ],
         },
@@ -270,5 +268,35 @@ describe("questionnaire extension", () => {
 
     expect(rendered.text).toContain("✓ scope: 1. Small");
     expect(rendered.text).toContain("✓ priority: (wrote) urgent");
+  });
+
+  it("renderResult formats multi-select answers", () => {
+    const { tool } = setupExtension();
+    const theme = createTheme();
+
+    const rendered = tool.renderResult(
+      {
+        content: [{ type: "text", text: "ignored" }],
+        details: {
+          questions: [],
+          cancelled: false,
+          answers: [
+            {
+              id: "scope",
+              values: ["small", "medium"],
+              labels: ["Small", "Medium"],
+              selectedIndices: [1, 2],
+              custom: "large-ish",
+            },
+          ],
+        },
+      },
+      {},
+      theme,
+    );
+
+    expect(rendered.text).toContain(
+      "✓ scope: 1. Small, 2. Medium, (wrote) large-ish",
+    );
   });
 });
