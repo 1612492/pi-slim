@@ -10,9 +10,10 @@ Use this skill when the main session should stay in read-only planning mode.
 ## Runtime model
 
 - `/plan` toggles read-only planning mode.
+- The agent should show short progress updates while exploring.
 - The agent should produce a numbered `Plan:` section.
 - Plan mode blocks editing and unsafe shell commands.
-- When the user executes the plan, the agent should mark completed steps with `[DONE:n]`.
+- The plan is returned in the normal assistant response with no extra todo list message.
 
 ## Rules
 
@@ -25,6 +26,9 @@ Use this skill when the main session should stay in read-only planning mode.
 ## Output shape
 
 ```text
+I’m inspecting the target area and nearby examples so the plan matches the repo’s existing style.
+I found the main implementation path; now I’m checking the closest tests and helper utilities to keep the plan minimal.
+
 Plan:
 1. First concrete step
 2. Second concrete step

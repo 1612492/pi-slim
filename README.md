@@ -16,8 +16,8 @@ Minimal Pi package focused on context-efficient docs lookup, runtime plan mode, 
 ### Runtime workflow
 
 - `/plan` toggles read-only planning mode
-- numbered `Plan:` sections are extracted into tracked todos
-- execution mode tracks step completion with `[DONE:n]`
+- OpenCode-style progress updates can precede the numbered `Plan:` section
+- the plan is returned in the normal assistant response
 - ambiguous planning questions can use `questionnaire`
 
 ### Repo-owned subagents
@@ -43,9 +43,7 @@ Plan mode is runtime state, not a persisted plan file workflow.
 - Only read-only tools remain active.
 - Unsafe bash commands are blocked.
 - If requirements are ambiguous, plan mode can ask structured clarifying questions with `questionnaire`.
-- The agent should respond with a numbered `Plan:` section.
-- After planning, the UI can switch into execution mode.
-- During execution, the agent marks completed steps with `[DONE:n]`.
+- The agent should respond with brief progress narration followed by a numbered `Plan:` section.
 
 ## Subagent tool
 

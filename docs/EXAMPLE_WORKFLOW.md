@@ -13,9 +13,8 @@ Recommended flow:
 1. Run `/plan`
 2. Stay in read-only mode while investigating
 3. If requirements are ambiguous, ask clarifying questions with `questionnaire`
-4. Produce a numbered `Plan:` section
-5. Choose `Execute the plan`
-6. Mark progress with `[DONE:n]`
+4. Produce short progress updates during exploration, then a numbered `Plan:` section
+5. Turn off `/plan` when ready, then continue with execution in a normal turn
 
 ## Example 2: Focused local discovery
 
