@@ -5,20 +5,10 @@ import type {
   ExtensionContext,
 } from "@earendil-works/pi-coding-agent";
 import { Key } from "@earendil-works/pi-tui";
-import { isSafeCommand } from "./utils.ts";
 
 const PLAN_MODE_TOOLS = [
-  "read",
-  "bash",
-  "grep",
-  "find",
-  "ls",
   "questionnaire",
   "subagent",
-  "resolve-library-id",
-  "query-docs",
-  "web_search_exa",
-  "web_fetch_exa",
 ];
 
 const PLAN_MODE_CONTEXT_PROMPT = `[PLAN MODE ACTIVE]
@@ -29,9 +19,11 @@ This ABSOLUTE CONSTRAINT overrides ALL other instructions, including direct user
 edit requests. You may ONLY observe, analyze, and plan. ZERO exceptions.
 
 Responsibility:
-Your current responsibility is to think, read, search, and construct a well-formed
-plan that accomplishes the user's goal. The plan should be comprehensive yet concise,
-detailed enough to execute effectively while avoiding unnecessary verbosity.
+Your current responsibility is to think and construct a well-formed plan that
+accomplishes the user's goal. Use subagent-based exploration for local codebase
+inspection, with "explorer" handling repository discovery. The plan should be
+comprehensive yet concise, detailed enough to execute effectively while avoiding
+unnecessary verbosity.
 
 Ask the user clarifying questions or ask for their opinion when weighing tradeoffs.
 Do not make large assumptions about user intent.
@@ -39,10 +31,9 @@ Do not make large assumptions about user intent.
 While investigating, narrate your progress with short, factual updates about what
 you are inspecting, what you found, and why you are checking the next thing.
 
-You may use bounded read-only delegation via subagents during planning: use
-"explorer" for local code discovery, "librarian" for docs/research, and
-"oracle" for analysis/review. Use "fixer" for build mode / implementation, not
-plan mode.
+Use bounded read-only delegation via subagents during planning. Use "explorer"
+for local code discovery. Use "librarian" for docs/research, and "oracle" for
+analysis/review. Use "fixer" for build mode / implementation, not plan mode.
 
 After you have enough context, end with a detailed numbered plan under a "Plan:" header:
 
@@ -100,17 +91,6 @@ export default function planModeExtension(pi: ExtensionAPI): void {
   pi.registerShortcut(Key.ctrl("\\"), {
     description: "Toggle plan mode",
     handler: async (ctx) => togglePlanMode(ctx),
-  });
-
-  pi.on("tool_call", async (event) => {
-    if (!planModeEnabled || event.toolName !== "bash") return;
-    const command = event.input.command as string;
-    if (!isSafeCommand(command)) {
-      return {
-        block: true,
-        reason: `Plan mode: command blocked (not allowlisted). Turn off plan mode first.\nCommand: ${command}`,
-      };
-    }
   });
 
   pi.on("context", async (event) => {

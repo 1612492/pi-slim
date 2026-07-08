@@ -13,7 +13,8 @@ Use this skill when the main session should stay in read-only planning mode.
 - The agent should show short progress updates while exploring.
 - The agent should produce a numbered `Plan:` section.
 - Plan mode blocks editing and unsafe shell commands.
-- Plan mode may use `subagent` only for bounded read-only delegation.
+- Plan mode may use `subagent` only for bounded read-only delegation, with
+  `explorer` handling local codebase discovery.
 - The plan is returned in the normal assistant response with no extra todo list message.
 
 ## Rules
@@ -21,7 +22,8 @@ Use this skill when the main session should stay in read-only planning mode.
 - Do not edit files while plan mode is active.
 - Prefer the smallest read-only tool that can answer the question.
 - If requirements are ambiguous, ask clarifying questions with `questionnaire`.
-- Use `explorer`, `librarian`, and `oracle` for read-only delegated work.
+- Use `subagent` with `explorer` for repository discovery; use `librarian` and
+  `oracle` for other read-only delegated work.
 - Use `fixer` for build-mode implementation, not plan mode.
 - Use research tools normally if they are needed and remain read-only.
 - Keep the plan concrete, ordered, and implementation-ready.

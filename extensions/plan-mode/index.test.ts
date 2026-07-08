@@ -63,27 +63,34 @@ describe("plan-mode extension", () => {
       "CRITICAL: Plan mode ACTIVE - you are in READ-ONLY phase",
     );
     expect(content).toContain(
-      "Your current responsibility is to think, read, search",
+      "Your current responsibility is to think and construct a well-formed plan",
     );
-    expect(content).toContain(
-      '"explorer" for local code discovery, "librarian" for docs/research, and',
-    );
-    expect(content).toContain(
-      '"oracle" for analysis/review. Use "fixer" for build mode / implementation, not',
-    );
-    expect(content).not.toContain(
-      'Use "fixer" for build mode / implementation, not plan mode.',
-    );
+    expect(content).toContain("Use subagent-based exploration for local codebase");
+    expect(content).toContain('inspection, with "explorer" handling repository discovery.');
+    expect(content).toContain('Use "librarian" for docs/research, and "oracle" for');
+    expect(content).toContain('analysis/review. Use "fixer" for build mode / implementation, not');
     expect(content).toContain("Plan:\n1. First step description");
   });
 
-  it("includes subagent in the plan mode tool allowlist", async () => {
+  it("keeps subagent available and removes direct exploration tools in plan mode", async () => {
     const { shortcuts, pi, ctx } = setupExtension();
 
     await shortcuts.get("ctrl+\\")?.(ctx);
 
-    expect(pi.setActiveTools).toHaveBeenCalledWith(
-      expect.arrayContaining(["subagent"]),
+    expect(pi.setActiveTools).toHaveBeenCalledWith(["questionnaire", "subagent"]);
+    const tools = (pi.setActiveTools as unknown as { mock: { calls: [string[]] } }).mock.calls[0][0];
+    expect(tools).not.toEqual(
+      expect.arrayContaining([
+        "read",
+        "bash",
+        "grep",
+        "find",
+        "ls",
+        "resolve-library-id",
+        "query-docs",
+        "web_search_exa",
+        "web_fetch_exa",
+      ]),
     );
   });
 
