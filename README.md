@@ -94,6 +94,14 @@ Order:
 
 ## Installation
 
+Install this package in Pi:
+
+```bash
+pi install git:github.com/1612492/pi-slim
+```
+
+For local development:
+
 ```bash
 pnpm install
 pnpm test
@@ -109,6 +117,20 @@ Environment variables:
 LSP tools use the package-installed `typescript-language-server` dependency.
 Install with `pnpm install`; the extension resolves the local binary from
 `node_modules` and does not rely on global `PATH` lookup.
+
+## Themes
+
+This package ships a bundled theme: `catppuccin-mocha`.
+
+Select it in `~/.pi/agent/settings.json`:
+
+```json
+{
+  "theme": "catppuccin-mocha"
+}
+```
+
+The theme source file is available at `themes/catppuccin-mocha.json`.
 
 ## Package layout
 
