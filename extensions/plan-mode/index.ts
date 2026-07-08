@@ -51,6 +51,13 @@ export default function planModeExtension(pi: ExtensionAPI): void {
   let planModeEnabled = false;
   let normalModeTools: string[] = [];
 
+  function setPlanModeStatus(ctx: ExtensionContext): void {
+    const theme = ctx.ui.theme;
+    const label = planModeEnabled ? "PLAN MODE" : "BUILD MODE";
+    const color = planModeEnabled ? "accent" : "success";
+    ctx.ui.setStatus("plan-mode", theme.fg(color, label));
+  }
+
   pi.registerFlag("plan", {
     description: "Start in plan mode (read-only exploration)",
     type: "boolean",
@@ -71,14 +78,14 @@ export default function planModeExtension(pi: ExtensionAPI): void {
     }
     planModeEnabled = true;
     pi.setActiveTools(PLAN_MODE_TOOLS);
-    ctx.ui.notify("Plan mode enabled");
+    setPlanModeStatus(ctx);
     persistState();
   }
 
   function disablePlanMode(ctx: ExtensionContext): void {
     planModeEnabled = false;
     pi.setActiveTools(normalModeTools);
-    ctx.ui.notify("Plan mode disabled");
+    setPlanModeStatus(ctx);
     persistState();
   }
 
@@ -90,12 +97,7 @@ export default function planModeExtension(pi: ExtensionAPI): void {
     }
   }
 
-  pi.registerCommand("plan", {
-    description: "Toggle plan mode (read-only exploration)",
-    handler: async (_args, ctx) => togglePlanMode(ctx),
-  });
-
-  pi.registerShortcut(Key.ctrlAlt("p"), {
+  pi.registerShortcut(Key.ctrl("\\"), {
     description: "Toggle plan mode",
     handler: async (ctx) => togglePlanMode(ctx),
   });
@@ -180,8 +182,8 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 
     if (planModeEnabled) {
       pi.setActiveTools(PLAN_MODE_TOOLS);
-    } else {
-      ctx.ui.notify("Plan mode disabled");
     }
+
+    setPlanModeStatus(ctx);
   });
 }
