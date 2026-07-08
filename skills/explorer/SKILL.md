@@ -12,6 +12,8 @@ Use this skill when creating or interpreting an `explorer` subagent run.
 - local code search only
 - no editing
 - no external docs lookup
+- prefer LSP-first semantic navigation for TypeScript symbol lookups, references, implementations, and diagnostics
+- use grep/find/rg/read for raw text, config, and fallback cases when LSP is not the right tool
 - compact findings with file paths and line references when possible
 
 ## Good explorer tasks

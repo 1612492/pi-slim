@@ -10,6 +10,13 @@ Minimal Pi package focused on context-efficient docs lookup, structured clarific
 - `query-docs`
 - `web_search_exa`
 - `web_fetch_exa`
+- `lsp_hover`
+- `lsp_definition`
+- `lsp_declaration`
+- `lsp_type_definition`
+- `lsp_implementation`
+- `lsp_references`
+- `lsp_diagnostics` (requires `filePath`)
 - `subagent`
 - `questionnaire`
 
@@ -24,10 +31,10 @@ Minimal Pi package focused on context-efficient docs lookup, structured clarific
 
 ### Repo-owned subagents
 
-- `explorer` - focused local code discovery
+- `explorer` - focused local code discovery with LSP-assisted TypeScript navigation
 - `librarian` - Context7-first docs and research
-- `oracle` - review, risk analysis, and simplification guidance
-- `fixer` - isolated implementation in build mode
+- `oracle` - review, risk analysis, and simplification guidance with LSP-assisted TS inspection
+- `fixer` - isolated implementation in build mode with optional LSP-assisted TS verification
 
 ## Design goals
 
@@ -99,6 +106,10 @@ Environment variables:
 - `CONTEXT7_API_KEY`
 - `EXA_API_KEY`
 
+LSP tools use the package-installed `typescript-language-server` dependency.
+Install with `pnpm install`; the extension resolves the local binary from
+`node_modules` and does not rely on global `PATH` lookup.
+
 ## Package layout
 
 ```text
@@ -113,6 +124,9 @@ extensions/
     index.ts
     index.test.ts
   exa/
+    index.ts
+    index.test.ts
+  lsp/
     index.ts
     index.test.ts
   permission-gate/

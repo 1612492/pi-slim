@@ -13,6 +13,7 @@
     "@earendil-works/pi-ai": "^0.80.3",
     "@earendil-works/pi-coding-agent": "^0.80.3",
     "@earendil-works/pi-tui": "^0.80.3",
+    "typescript-language-server": "^4.4.0",
     "typebox": "^1.1.34"
   },
   "devDependencies": {

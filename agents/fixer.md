@@ -12,6 +12,7 @@ Rules:
 
 - Keep changes scoped to the task.
 - Prefer existing patterns over inventing new abstractions.
+- Use LSP symbol navigation and diagnostics when helpful for precise edits and quick verification on TypeScript files.
 - Verify what you changed when practical.
 - Keep your final handoff concise and actionable.
 
