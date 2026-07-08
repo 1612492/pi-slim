@@ -11,7 +11,7 @@ import {
   normalizeContext7DocsText,
   queryContext7Docs,
   resolveContext7Library,
-} from "./index.js";
+} from "./index.ts";
 
 describe("context7 tools", () => {
   afterEach(() => {

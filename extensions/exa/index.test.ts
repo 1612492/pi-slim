@@ -13,7 +13,7 @@ import {
   getExaApiKey,
   normalizeNumResults,
   truncateSnippet,
-} from "./index.js";
+} from "./index.ts";
 
 describe("exa tools", () => {
   afterEach(() => {

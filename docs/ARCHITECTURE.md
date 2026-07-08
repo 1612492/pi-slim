@@ -8,7 +8,7 @@ Optimize for context efficiency with a runtime planning mode and isolated specia
 
 ```text
 Main Session
-  ├─ /plan enables read-only planning
+  ├─ Ctrl+\\ enables read-only planning
   ├─ asks clarifying questions with questionnaire when needed
   ├─ drafts a numbered Plan:
   ├─ executes with [DONE:n] tracking when approved
@@ -35,7 +35,7 @@ Oracle
 Plan mode is runtime state, not a persisted file workflow.
 
 ```text
-/plan
+Ctrl+\\
   ├─ enables read-only planning
   ├─ restricts tools
   ├─ blocks unsafe bash commands

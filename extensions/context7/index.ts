@@ -1,14 +1,10 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import {
-  DEFAULT_MAX_BYTES,
-  DEFAULT_MAX_LINES,
-  defineTool,
-  formatSize,
-  keyHint,
-  truncateHead,
-} from "@earendil-works/pi-coding-agent";
-import { Text } from "@earendil-works/pi-tui";
+import { defineTool } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
+import {
+  buildToolText,
+  renderCollapsedTextResult,
+} from "../shared/tool-output.ts";
 
 const CONTEXT7_BASE_URL = "https://context7.com/api/v2";
 
@@ -55,27 +51,6 @@ export interface Context7ToolDetails extends Record<string, unknown> {
   libraryDescription?: string;
   truncation?: {
     truncated?: boolean;
-  };
-}
-
-export function buildToolText(details: Record<string, unknown>, text: string) {
-  const truncation = truncateHead(text, {
-    maxLines: DEFAULT_MAX_LINES,
-    maxBytes: DEFAULT_MAX_BYTES,
-  });
-
-  if (!truncation.truncated) {
-    return {
-      text: truncation.content,
-      details: { ...details, truncation },
-    };
-  }
-
-  const truncatedLines = truncation.totalLines - truncation.outputLines;
-  const truncatedBytes = truncation.totalBytes - truncation.outputBytes;
-  return {
-    text: `${truncation.content}\n\n[Output truncated: showing ${truncation.outputLines} of ${truncation.totalLines} lines (${formatSize(truncation.outputBytes)} of ${formatSize(truncation.totalBytes)}). ${truncatedLines} lines (${formatSize(truncatedBytes)}) omitted.]`,
-    details: { ...details, truncation },
   };
 }
 
@@ -225,14 +200,7 @@ export function createResolveLibraryIdTool() {
       };
     },
     renderResult(result, { expanded, isPartial }, theme, context) {
-      if (isPartial) {
-        return new Text(theme.fg("warning", "Resolving library..."), 0, 0);
-      }
-
-      const output =
-        result.content[0]?.type === "text" ? result.content[0].text : "";
       const details = (result.details ?? {}) as Context7ToolDetails;
-      if (expanded) return new Text(output, 0, 0);
 
       const query =
         typeof context.args === "object" &&
@@ -240,20 +208,18 @@ export function createResolveLibraryIdTool() {
         "query" in context.args
           ? String((context.args as { query?: string }).query ?? "")
           : "";
-      const summary =
-        theme.fg("success", "✓ ") +
-        theme.fg(
-          "muted",
-          getCollapsedLabel({
-            prefix: "Resolved",
-            subject: details.libraryTitle || details.libraryId,
-            query,
-          }),
-        ) +
-        "\n" +
-        theme.fg("dim", keyHint("app.tools.expand", "to expand"));
-
-      return new Text(summary, 0, 0);
+      return renderCollapsedTextResult({
+        result,
+        expanded,
+        isPartial,
+        theme,
+        partialLabel: "Resolving library...",
+        summaryLabel: getCollapsedLabel({
+          prefix: "Resolved",
+          subject: details.libraryTitle || details.libraryId,
+          query,
+        }),
+      });
     },
   });
 }
@@ -284,14 +250,7 @@ export function createQueryDocsTool() {
       };
     },
     renderResult(result, { expanded, isPartial }, theme, context) {
-      if (isPartial) {
-        return new Text(theme.fg("warning", "Looking up docs..."), 0, 0);
-      }
-
-      const output =
-        result.content[0]?.type === "text" ? result.content[0].text : "";
       const details = (result.details ?? {}) as Context7ToolDetails;
-      if (expanded) return new Text(output, 0, 0);
 
       const query =
         typeof context.args === "object" &&
@@ -299,21 +258,19 @@ export function createQueryDocsTool() {
         "query" in context.args
           ? String((context.args as { query?: string }).query ?? "")
           : "";
-      const summary =
-        theme.fg("success", "✓ ") +
-        theme.fg(
-          "muted",
-          getCollapsedLabel({
-            prefix: "Docs for",
-            subject: details.libraryId,
-            query,
-            truncated: !!details.truncation?.truncated,
-          }),
-        ) +
-        "\n" +
-        theme.fg("dim", keyHint("app.tools.expand", "to expand"));
-
-      return new Text(summary, 0, 0);
+      return renderCollapsedTextResult({
+        result,
+        expanded,
+        isPartial,
+        theme,
+        partialLabel: "Looking up docs...",
+        summaryLabel: getCollapsedLabel({
+          prefix: "Docs for",
+          subject: details.libraryId,
+          query,
+          truncated: !!details.truncation?.truncated,
+        }),
+      });
     },
   });
 }

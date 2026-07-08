@@ -2,7 +2,7 @@ import { mkdtemp, mkdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { discoverAgents } from "./agents.js";
+import { discoverAgents } from "./utils.ts";
 
 const originalHome = process.env.HOME;
 

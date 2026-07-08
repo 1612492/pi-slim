@@ -1,6 +1,6 @@
 ---
 name: plan-mode
-description: Runtime planning discipline for read-only exploration with `/plan`, extracted plan steps, and tracked execution.
+description: Runtime planning discipline for read-only exploration with `Ctrl+\\`, extracted plan steps, and tracked execution.
 ---
 
 # Plan Mode
@@ -9,7 +9,7 @@ Use this skill when the main session should stay in read-only planning mode.
 
 ## Runtime model
 
-- `/plan` toggles read-only planning mode.
+- `Ctrl+\\` toggles read-only planning mode.
 - The agent should show short progress updates while exploring.
 - The agent should produce a numbered `Plan:` section.
 - Plan mode blocks editing and unsafe shell commands.

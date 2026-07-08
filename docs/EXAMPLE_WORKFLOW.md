@@ -10,11 +10,11 @@ Refactor the docs lookup flow to reduce duplicate retrieval. Plan first.
 
 Recommended flow:
 
-1. Run `/plan`
+1. Press `Ctrl+\\`
 2. Stay in read-only mode while investigating
 3. If requirements are ambiguous, ask clarifying questions with `questionnaire`
 4. Produce short progress updates during exploration, then a numbered `Plan:` section
-5. Turn off `/plan` when ready, then continue with execution in a normal turn
+5. Turn off plan mode when ready, then continue with execution in a normal turn
 
 ## Example 2: Focused local discovery
 

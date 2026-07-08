@@ -1,6 +1,6 @@
 # pi-slim
 
-Minimal Pi package focused on context-efficient docs lookup, runtime plan mode, and delegated subagents.
+Minimal Pi package focused on context-efficient docs lookup, structured clarification, runtime plan mode, and delegated subagents.
 
 ## What it provides
 
@@ -15,10 +15,11 @@ Minimal Pi package focused on context-efficient docs lookup, runtime plan mode, 
 
 ### Runtime workflow
 
-- `/plan` toggles read-only planning mode
+- `Ctrl+\\` toggles read-only planning mode
 - OpenCode-style progress updates can precede the numbered `Plan:` section
 - the plan is returned in the normal assistant response
 - ambiguous planning questions can use `questionnaire`
+- plan mode stays read-only and should not be bypassed via `subagent`
 
 ### Repo-owned subagents
 
@@ -34,16 +35,18 @@ Minimal Pi package focused on context-efficient docs lookup, runtime plan mode, 
 3. Keep planning read-only until execution is explicitly chosen.
 4. Use isolated subagents for bounded recon, implementation, and review.
 5. Keep outputs compact and handoff-friendly.
+6. Prefer structured clarification over guessing when a short question will do.
 
 ## Plan mode
 
 Plan mode is runtime state, not a persisted plan file workflow.
 
-- `/plan` enables read-only exploration.
-- Only read-only tools remain active.
+- `Ctrl+\\` enables read-only exploration.
+- Only a restricted read-only-safe tool set remains active.
 - Unsafe bash commands are blocked.
 - If requirements are ambiguous, plan mode can ask structured clarifying questions with `questionnaire`.
 - The agent should respond with brief progress narration followed by a numbered `Plan:` section.
+- `subagent` should not be used to bypass plan-mode restrictions.
 
 ## Subagent tool
 
@@ -53,7 +56,12 @@ Plan mode is runtime state, not a persisted plan file workflow.
 - parallel: `{ tasks: [...] }`
 - chain: `{ chain: [...] }`
 
-Default scope is project agents from `agents/`.
+Additional behavior:
+
+- default `agentScope` is `project`
+- project agents are discovered from the nearest `agents/` directory
+- `agentScope` can be `user`, `project`, or `both`
+- `confirmProjectAgents` can require approval before running repo-local agents
 
 ## Research tools
 
@@ -112,7 +120,10 @@ extensions/
     utils.ts
   subagent/
     index.ts
-    agents.ts
+    utils.ts
+  questionnaire/
+    index.ts
+    index.test.ts
 skills/
   explorer/
   librarian/

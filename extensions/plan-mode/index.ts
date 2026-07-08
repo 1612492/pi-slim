@@ -5,7 +5,7 @@ import type {
   ExtensionContext,
 } from "@earendil-works/pi-coding-agent";
 import { Key } from "@earendil-works/pi-tui";
-import { isSafeCommand } from "./utils.js";
+import { isSafeCommand } from "./utils.ts";
 
 const PLAN_MODE_TOOLS = [
   "read",
@@ -58,12 +58,6 @@ export default function planModeExtension(pi: ExtensionAPI): void {
     ctx.ui.setStatus("plan-mode", theme.fg(color, label));
   }
 
-  pi.registerFlag("plan", {
-    description: "Start in plan mode (read-only exploration)",
-    type: "boolean",
-    default: false,
-  });
-
   function persistState(): void {
     pi.appendEntry("plan-mode", {
       enabled: planModeEnabled,
@@ -108,7 +102,7 @@ export default function planModeExtension(pi: ExtensionAPI): void {
     if (!isSafeCommand(command)) {
       return {
         block: true,
-        reason: `Plan mode: command blocked (not allowlisted). Disable /plan first.\nCommand: ${command}`,
+        reason: `Plan mode: command blocked (not allowlisted). Turn off plan mode first.\nCommand: ${command}`,
       };
     }
   });
@@ -154,10 +148,6 @@ export default function planModeExtension(pi: ExtensionAPI): void {
     normalModeTools = pi.getActiveTools();
     if (normalModeTools.length === 0) {
       normalModeTools = pi.getAllTools().map((tool) => tool.name);
-    }
-
-    if (pi.getFlag("plan") === true) {
-      planModeEnabled = true;
     }
 
     const entries = ctx.sessionManager.getEntries();

@@ -1,14 +1,10 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import {
-  DEFAULT_MAX_BYTES,
-  DEFAULT_MAX_LINES,
-  defineTool,
-  formatSize,
-  keyHint,
-  truncateHead,
-} from "@earendil-works/pi-coding-agent";
-import { Text } from "@earendil-works/pi-tui";
+import { defineTool } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
+import {
+  buildToolText,
+  renderCollapsedTextResult,
+} from "../shared/tool-output.ts";
 
 const EXA_SEARCH_URL = "https://api.exa.ai/search";
 const EXA_CONTENTS_URL = "https://api.exa.ai/contents";
@@ -78,27 +74,6 @@ export interface ExaToolDetails extends Record<string, unknown> {
   url?: string;
   truncation?: {
     truncated?: boolean;
-  };
-}
-
-export function buildToolText(details: Record<string, unknown>, text: string) {
-  const truncation = truncateHead(text, {
-    maxLines: DEFAULT_MAX_LINES,
-    maxBytes: DEFAULT_MAX_BYTES,
-  });
-
-  if (!truncation.truncated) {
-    return {
-      text: truncation.content,
-      details: { ...details, truncation },
-    };
-  }
-
-  const truncatedLines = truncation.totalLines - truncation.outputLines;
-  const truncatedBytes = truncation.totalBytes - truncation.outputBytes;
-  return {
-    text: `${truncation.content}\n\n[Output truncated: showing ${truncation.outputLines} of ${truncation.totalLines} lines (${formatSize(truncation.outputBytes)} of ${formatSize(truncation.totalBytes)}). ${truncatedLines} lines (${formatSize(truncatedBytes)}) omitted.]`,
-    details: { ...details, truncation },
   };
 }
 
@@ -290,27 +265,19 @@ export function createWebSearchExaTool() {
       };
     },
     renderResult(result, { expanded, isPartial }, theme) {
-      if (isPartial) {
-        return new Text(theme.fg("warning", "Searching the web..."), 0, 0);
-      }
-      const output =
-        result.content[0]?.type === "text" ? result.content[0].text : "";
       const details = (result.details ?? {}) as ExaToolDetails;
-      if (expanded) return new Text(output, 0, 0);
-
-      const summary =
-        theme.fg("success", "✓ ") +
-        theme.fg(
-          "muted",
-          getCollapsedLabel({
-            prefix: "Found",
-            resultCount: details.resultCount,
-            truncated: !!details.truncation?.truncated,
-          }),
-        ) +
-        "\n" +
-        theme.fg("dim", keyHint("app.tools.expand", "to expand"));
-      return new Text(summary, 0, 0);
+      return renderCollapsedTextResult({
+        result,
+        expanded,
+        isPartial,
+        theme,
+        partialLabel: "Searching the web...",
+        summaryLabel: getCollapsedLabel({
+          prefix: "Found",
+          resultCount: details.resultCount,
+          truncated: !!details.truncation?.truncated,
+        }),
+      });
     },
   });
 }
@@ -339,27 +306,19 @@ export function createWebFetchExaTool() {
       };
     },
     renderResult(result, { expanded, isPartial }, theme) {
-      if (isPartial) {
-        return new Text(theme.fg("warning", "Fetching webpage..."), 0, 0);
-      }
-      const output =
-        result.content[0]?.type === "text" ? result.content[0].text : "";
       const details = (result.details ?? {}) as ExaToolDetails;
-      if (expanded) return new Text(output, 0, 0);
-
-      const summary =
-        theme.fg("success", "✓ ") +
-        theme.fg(
-          "muted",
-          getCollapsedLabel({
-            prefix: "Fetched",
-            subject: details.url ? String(details.url) : undefined,
-            truncated: !!details.truncation?.truncated,
-          }),
-        ) +
-        "\n" +
-        theme.fg("dim", keyHint("app.tools.expand", "to expand"));
-      return new Text(summary, 0, 0);
+      return renderCollapsedTextResult({
+        result,
+        expanded,
+        isPartial,
+        theme,
+        partialLabel: "Fetching webpage...",
+        summaryLabel: getCollapsedLabel({
+          prefix: "Fetched",
+          subject: details.url ? String(details.url) : undefined,
+          truncated: !!details.truncation?.truncated,
+        }),
+      });
     },
   });
 }

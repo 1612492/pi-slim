@@ -1,6 +1,6 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { describe, expect, it, vi } from "vitest";
-import planModeExtension from "./index.js";
+import planModeExtension from "./index.ts";
 
 function setupExtension() {
   const handlers = new Map<
@@ -28,6 +28,10 @@ function setupExtension() {
   const ctx = {
     hasUI: true,
     ui: {
+      theme: {
+        fg: vi.fn((_color: string, text: string) => text),
+      },
+      setStatus: vi.fn(),
       notify: vi.fn(),
     },
     sessionManager: {
@@ -65,13 +69,13 @@ describe("plan-mode extension", () => {
     expect(handlers.has("agent_end")).toBe(false);
   });
 
-  it("notifies when plan mode is disabled at session start", async () => {
+  it("shows build mode status when plan mode is disabled at session start", async () => {
     const { handlers, ctx, pi } = setupExtension();
 
     pi.getFlag = vi.fn(() => false);
 
     await handlers.get("session_start")?.({}, ctx);
 
-    expect(ctx.ui.notify).toHaveBeenCalledWith("Plan mode disabled");
+    expect(ctx.ui.setStatus).toHaveBeenCalledWith("plan-mode", "BUILD MODE");
   });
 });
