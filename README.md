@@ -19,14 +19,15 @@ Minimal Pi package focused on context-efficient docs lookup, structured clarific
 - OpenCode-style progress updates can precede the numbered `Plan:` section
 - the plan is returned in the normal assistant response
 - ambiguous planning questions can use `questionnaire`
+- plan mode may delegate bounded read-only work to `explorer`, `librarian`, or `oracle`
 - plan mode stays read-only and should not be bypassed via `subagent`
 
 ### Repo-owned subagents
 
 - `explorer` - focused local code discovery
 - `librarian` - Context7-first docs and research
-- `fixer` - isolated implementation
 - `oracle` - review, risk analysis, and simplification guidance
+- `fixer` - isolated implementation in build mode
 
 ## Design goals
 
@@ -45,6 +46,7 @@ Plan mode is runtime state, not a persisted plan file workflow.
 - Only a restricted read-only-safe tool set remains active.
 - Unsafe bash commands are blocked.
 - If requirements are ambiguous, plan mode can ask structured clarifying questions with `questionnaire`.
+- Plan mode can use `subagent` only for bounded read-only delegation.
 - The agent should respond with brief progress narration followed by a numbered `Plan:` section.
 - `subagent` should not be used to bypass plan-mode restrictions.
 

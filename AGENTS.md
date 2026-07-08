@@ -61,7 +61,8 @@ Required behavior:
 2. Planning output should contain a numbered `Plan:` section.
 3. Execution mode tracks completion with `[DONE:n]`.
 4. Do not recreate the old `current-plan.md` workflow.
-5. Do not use `subagent` to bypass read-only planning restrictions.
+5. Plan mode may use `subagent` only for bounded read-only delegation.
+6. Do not use `subagent` to bypass read-only planning restrictions.
 
 ### Subagents
 
@@ -73,15 +74,15 @@ Repo-owned agents:
 
 1. `explorer` for local code discovery
 2. `librarian` for docs and research
-3. `fixer` for isolated implementation
-4. `oracle` for review and strategy
+3. `oracle` for review and strategy
+4. `fixer` for isolated implementation in build mode
 
 Rules:
 
 1. Planning stays in the main session unless the user explicitly wants delegation.
 2. Prefer `explorer` and `librarian` for bounded retrieval.
-3. Prefer `fixer` for scoped implementation.
-4. Prefer `oracle` for review, risk analysis, and simplification.
+3. Prefer `oracle` for review, risk analysis, and simplification.
+4. Prefer `fixer` for scoped implementation in build mode.
 5. Use `subagent` in normal execution mode, not as a plan-mode escape hatch.
 
 ## Context-efficiency rules

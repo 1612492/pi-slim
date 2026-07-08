@@ -314,7 +314,7 @@ export default function subagentExtension(pi: ExtensionAPI) {
       "Use subagent when the user asks in normal chat for focused exploration, isolated research, scoped implementation, or targeted review.",
       'Use `agent: "explorer"` for local code discovery, tracing behavior, or finding where something is implemented.',
       'Use `agent: "librarian"` for docs lookup or external research when isolated context is useful.',
-      'Use `agent: "fixer"` for bounded implementation work that should stay out of the main session.',
+      'Use `agent: "fixer"` for bounded implementation work in build mode that should stay out of the main session.',
       'Use `agent: "oracle"` for review, risk analysis, or strategy guidance.',
       "Use `chain` with fixer -> oracle -> fixer when the user wants implementation, review, then follow-up fixes.",
     ],

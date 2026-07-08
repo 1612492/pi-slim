@@ -14,8 +14,8 @@ Main Session
   ├─ executes with [DONE:n] tracking when approved
   ├─ calls Explorer for local code discovery when needed
   ├─ calls Librarian for docs/research when needed
-  ├─ calls Fixer for isolated implementation when needed
-  └─ calls Oracle for review or strategic guidance when needed
+  ├─ calls Oracle for review or strategic guidance when needed
+  └─ calls Fixer for isolated implementation in build mode when needed
 
 Explorer
   └─ local search + targeted file reads
@@ -62,7 +62,7 @@ execute plan
 
 ### Fixer
 
-- bounded implementation work
+- build-mode implementation work
 - concise files-changed and verification notes
 
 ### Oracle
@@ -82,6 +82,7 @@ execute plan
 ## Anti-patterns
 
 - reintroducing persisted `current-plan.md` workflow
-- using `fixer` or `subagent` during plan mode to bypass read-only restrictions
+- using `fixer` during plan mode
+- using `subagent` during plan mode to bypass read-only restrictions
 - broad rediscovery when a focused subagent handoff is enough
 - using web search first for ordinary software docs questions

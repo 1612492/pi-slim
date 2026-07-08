@@ -14,6 +14,7 @@ const PLAN_MODE_TOOLS = [
   "find",
   "ls",
   "questionnaire",
+  "subagent",
   "resolve-library-id",
   "query-docs",
   "web_search_exa",
@@ -37,6 +38,11 @@ Do not make large assumptions about user intent.
 
 While investigating, narrate your progress with short, factual updates about what
 you are inspecting, what you found, and why you are checking the next thing.
+
+You may use bounded read-only delegation via subagents during planning: use
+"explorer" for local code discovery, "librarian" for docs/research, and
+"oracle" for analysis/review. Use "fixer" for build mode / implementation, not
+plan mode.
 
 After you have enough context, end with a detailed numbered plan under a "Plan:" header:
 
