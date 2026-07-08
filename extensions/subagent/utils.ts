@@ -1,8 +1,9 @@
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
+import { fileURLToPath } from "node:url";
 
-export type AgentScope = "user" | "project" | "both";
+export type AgentScope = "builtin" | "user" | "both";
 
 export interface AgentConfig {
   name: string;
@@ -10,13 +11,13 @@ export interface AgentConfig {
   tools?: string[];
   model?: string;
   systemPrompt: string;
-  source: "user" | "project";
+  source: "user" | "builtin";
   filePath: string;
 }
 
 export interface AgentDiscoveryResult {
   agents: AgentConfig[];
-  projectAgentsDir: string | null;
+  builtInAgentsDir: string;
 }
 
 function parseFrontmatterValue(value: string) {
@@ -56,7 +57,7 @@ function parseMarkdownAgent(content: string) {
 
 function loadAgentsFromDir(
   dir: string,
-  source: "user" | "project",
+  source: "user" | "builtin",
 ): AgentConfig[] {
   const agents: AgentConfig[] = [];
   if (!fs.existsSync(dir)) return agents;
@@ -93,43 +94,31 @@ function isDirectory(value: string) {
   }
 }
 
-function findNearestProjectAgentsDir(cwd: string): string | null {
-  let currentDir = cwd;
-  while (true) {
-    const repoAgents = path.join(currentDir, "agents");
-    if (isDirectory(repoAgents)) return repoAgents;
-
-    const legacyCandidate = path.join(currentDir, ".pi", "agents");
-    if (isDirectory(legacyCandidate)) return legacyCandidate;
-
-    const parentDir = path.dirname(currentDir);
-    if (parentDir === currentDir) return null;
-    currentDir = parentDir;
-  }
+function getBuiltInAgentsDir(): string {
+  return path.resolve(
+    path.dirname(fileURLToPath(import.meta.url)),
+    "..",
+    "..",
+    "agents",
+  );
 }
 
-export function discoverAgents(
-  cwd: string,
-  scope: AgentScope,
-): AgentDiscoveryResult {
+export function discoverAgents(scope: AgentScope): AgentDiscoveryResult {
   const userDir = path.join(os.homedir(), ".pi", "agent", "agents");
-  const projectAgentsDir = findNearestProjectAgentsDir(cwd);
+  const builtInAgentsDir = getBuiltInAgentsDir();
   const userAgents =
-    scope === "project" ? [] : loadAgentsFromDir(userDir, "user");
-  const projectAgents =
-    scope === "user" || !projectAgentsDir
-      ? []
-      : loadAgentsFromDir(projectAgentsDir, "project");
+    scope === "builtin" ? [] : loadAgentsFromDir(userDir, "user");
+  const builtInAgents = loadAgentsFromDir(builtInAgentsDir, "builtin");
 
   const map = new Map<string, AgentConfig>();
   if (scope === "both") {
+    for (const agent of builtInAgents) map.set(agent.name, agent);
     for (const agent of userAgents) map.set(agent.name, agent);
-    for (const agent of projectAgents) map.set(agent.name, agent);
   } else if (scope === "user") {
     for (const agent of userAgents) map.set(agent.name, agent);
   } else {
-    for (const agent of projectAgents) map.set(agent.name, agent);
+    for (const agent of builtInAgents) map.set(agent.name, agent);
   }
 
-  return { agents: Array.from(map.values()), projectAgentsDir };
+  return { agents: Array.from(map.values()), builtInAgentsDir };
 }

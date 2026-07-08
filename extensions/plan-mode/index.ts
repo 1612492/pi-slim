@@ -6,10 +6,7 @@ import type {
 } from "@earendil-works/pi-coding-agent";
 import { Key } from "@earendil-works/pi-tui";
 
-const PLAN_MODE_TOOLS = [
-  "questionnaire",
-  "subagent",
-];
+const PLAN_MODE_TOOLS = ["questionnaire", "subagent"];
 
 const PLAN_MODE_CONTEXT_PROMPT = `[PLAN MODE ACTIVE]
 CRITICAL: Plan mode ACTIVE - you are in READ-ONLY phase. STRICTLY FORBIDDEN:

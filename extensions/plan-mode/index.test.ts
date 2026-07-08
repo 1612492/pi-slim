@@ -65,10 +65,18 @@ describe("plan-mode extension", () => {
     expect(content).toContain(
       "Your current responsibility is to think and construct a well-formed plan",
     );
-    expect(content).toContain("Use subagent-based exploration for local codebase");
-    expect(content).toContain('inspection, with "explorer" handling repository discovery.');
-    expect(content).toContain('Use "librarian" for docs/research, and "oracle" for');
-    expect(content).toContain('analysis/review. Use "fixer" for build mode / implementation, not');
+    expect(content).toContain(
+      "Use subagent-based exploration for local codebase",
+    );
+    expect(content).toContain(
+      'inspection, with "explorer" handling repository discovery.',
+    );
+    expect(content).toContain(
+      'Use "librarian" for docs/research, and "oracle" for',
+    );
+    expect(content).toContain(
+      'analysis/review. Use "fixer" for build mode / implementation, not',
+    );
     expect(content).toContain("Plan:\n1. First step description");
   });
 
@@ -77,8 +85,13 @@ describe("plan-mode extension", () => {
 
     await shortcuts.get("ctrl+\\")?.(ctx);
 
-    expect(pi.setActiveTools).toHaveBeenCalledWith(["questionnaire", "subagent"]);
-    const tools = (pi.setActiveTools as unknown as { mock: { calls: [string[]] } }).mock.calls[0][0];
+    expect(pi.setActiveTools).toHaveBeenCalledWith([
+      "questionnaire",
+      "subagent",
+    ]);
+    const tools = (
+      pi.setActiveTools as unknown as { mock: { calls: [string[]] } }
+    ).mock.calls[0][0];
     expect(tools).not.toEqual(
       expect.arrayContaining([
         "read",

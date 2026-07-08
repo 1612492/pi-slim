@@ -24,7 +24,7 @@ interface UsageStats {
 
 interface SingleResult {
   agent: string;
-  agentSource: "user" | "project" | "unknown";
+  agentSource: "user" | "builtin" | "unknown";
   task: string;
   exitCode: number;
   messages: Message[];
@@ -33,13 +33,24 @@ interface SingleResult {
   model?: string;
   stopReason?: string;
   errorMessage?: string;
+  permissionRequired?: PermissionRequired;
   step?: number;
 }
+
+type PermissionRequired = {
+  kind: "outside-cwd" | "sensitive-file";
+  path: string;
+};
+
+type PermissionPreflight = PermissionRequired & {
+  kind: PermissionRequired["kind"];
+  path: string;
+};
 
 interface SubagentDetails {
   mode: "single" | "parallel" | "chain";
   agentScope: AgentScope;
-  projectAgentsDir: string | null;
+  builtInAgentsDir: string;
   results: SingleResult[];
 }
 
@@ -73,12 +84,9 @@ const SubagentParams = Type.Object({
   agentScope: Type.Optional(
     Type.Union([
       Type.Literal("user"),
-      Type.Literal("project"),
+      Type.Literal("builtin"),
       Type.Literal("both"),
     ]),
-  ),
-  confirmProjectAgents: Type.Optional(
-    Type.Boolean({ description: "Prompt before running project-local agents" }),
   ),
   cwd: Type.Optional(
     Type.String({ description: "Working directory override for single mode" }),
@@ -116,6 +124,68 @@ function getFinalOutput(messages: Message[]): string {
     }
   }
   return "";
+}
+
+function isSensitiveEnvPath(targetPath: string): boolean {
+  const base = path.basename(targetPath);
+  return (
+    base === ".env" || (base.startsWith(".env.") && base !== ".env.example")
+  );
+}
+
+function isOutsideCwd(cwd: string, targetPath: string): boolean {
+  const base = path.resolve(cwd);
+  const relative = path.relative(base, path.resolve(targetPath));
+  return (
+    relative === ".." ||
+    relative.startsWith(`..${path.sep}`) ||
+    path.isAbsolute(relative)
+  );
+}
+
+function extractExplicitPathTokens(text: string): string[] {
+  const matches = text.match(/"[^"]+"|'[^']+'|\S+/g) ?? [];
+  const results: string[] = [];
+  for (const raw of matches) {
+    const token = raw.replace(/^['"]|['"]$/g, "").replace(/[;,]+$/, "");
+    if (
+      !token ||
+      token.startsWith("-") ||
+      token.includes("{") ||
+      token.includes("}")
+    )
+      continue;
+    if (
+      token.startsWith("/") ||
+      token.startsWith("~/") ||
+      token.startsWith("./") ||
+      token.startsWith("../") ||
+      token.startsWith(".env")
+    ) {
+      results.push(token);
+    }
+  }
+  return results;
+}
+
+function resolveExplicitPath(cwd: string, token: string): string {
+  if (token.startsWith("~/"))
+    return path.join(process.env.HOME ?? "~", token.slice(2));
+  return path.resolve(cwd, token);
+}
+
+function getPreflightPermissionFromTask(
+  cwd: string,
+  task: string,
+): PermissionPreflight | undefined {
+  for (const token of extractExplicitPathTokens(task)) {
+    const resolved = resolveExplicitPath(cwd, token);
+    if (isSensitiveEnvPath(resolved))
+      return { kind: "sensitive-file", path: resolved };
+    if (isOutsideCwd(cwd, resolved))
+      return { kind: "outside-cwd", path: resolved };
+  }
+  return undefined;
 }
 
 function getPiInvocation(args: string[]): { command: string; args: string[] } {
@@ -171,6 +241,7 @@ async function runSingleAgent(
   task: string,
   cwd: string | undefined,
   step?: number,
+  permissionOverride?: PermissionRequired,
 ): Promise<SingleResult> {
   const agent = agents.find((item) => item.name === agentName);
   if (!agent) {
@@ -220,6 +291,12 @@ async function runSingleAgent(
         cwd: cwd ?? defaultCwd,
         shell: false,
         stdio: ["ignore", "pipe", "pipe"],
+        env: permissionOverride
+          ? {
+              ...process.env,
+              PI_PERMISSION_GATE_OVERRIDE: JSON.stringify(permissionOverride),
+            }
+          : process.env,
       });
       let stdout = "";
       let stderr = "";
@@ -237,6 +314,7 @@ async function runSingleAgent(
         const messages: Message[] = [];
         let stopReason: string | undefined;
         let errorMessage: string | undefined;
+        let permissionRequired: PermissionRequired | undefined;
         const usage: UsageStats = {
           input: 0,
           output: 0,
@@ -252,6 +330,7 @@ async function runSingleAgent(
           if (!line) continue;
           try {
             const event = JSON.parse(line) as Record<string, unknown>;
+            permissionRequired ??= extractPermissionRequiredFromEvent(event);
             if (event.type === "message_end" && event.message) {
               messages.push(event.message as Message);
             }
@@ -277,6 +356,7 @@ async function runSingleAgent(
               }
             }
           } catch {
+            permissionRequired ??= parsePermissionRequired(line);
             continue;
           }
         }
@@ -292,6 +372,7 @@ async function runSingleAgent(
           model: agent.model,
           stopReason,
           errorMessage,
+          permissionRequired,
           step,
         });
       });
@@ -301,6 +382,146 @@ async function runSingleAgent(
     if (tmpPromptDir)
       await fs.promises.rm(tmpPromptDir, { recursive: true, force: true });
   }
+}
+
+async function runSingleAgentWithRetry(
+  defaultCwd: string,
+  agents: AgentConfig[],
+  agentName: string,
+  task: string,
+  cwd: string | undefined,
+  ctx: {
+    hasUI: boolean;
+    ui: { confirm(title: string, message: string): Promise<boolean> };
+  },
+  step?: number,
+): Promise<SingleResult> {
+  const preflight = getPreflightPermissionFromTask(cwd ?? defaultCwd, task);
+  if (preflight && ctx.hasUI) {
+    const allowed = await ctx.ui.confirm(
+      preflight.kind === "outside-cwd"
+        ? "Allow outside-cwd access for subagent?"
+        : "Allow sensitive-file access for subagent?",
+      `${preflight.kind}\npath: ${preflight.path}\n\nSpawn this subagent with a narrow permission override?`,
+    );
+    if (!allowed) {
+      return {
+        agent: agentName,
+        agentSource: "unknown",
+        task,
+        exitCode: 1,
+        messages: [],
+        stderr: "Blocked by user",
+        usage: {
+          input: 0,
+          output: 0,
+          cacheRead: 0,
+          cacheWrite: 0,
+          cost: 0,
+          contextTokens: 0,
+          turns: 0,
+        },
+        step,
+        errorMessage: "Blocked by user",
+      };
+    }
+  }
+
+  const first = await runSingleAgent(
+    defaultCwd,
+    agents,
+    agentName,
+    task,
+    cwd,
+    step,
+    preflight,
+  );
+  const required = getPermissionRequiredFromResult(first);
+  if (!required) return first;
+
+  if (!ctx.hasUI) return first;
+
+  const allowed = await ctx.ui.confirm(
+    required.kind === "outside-cwd"
+      ? "Allow outside-cwd access for subagent?"
+      : "Allow sensitive-file access for subagent?",
+    `${required.kind}
+path: ${required.path}
+
+Retry this subagent once with a narrow permission override?`,
+  );
+
+  if (!allowed) return first;
+
+  return await runSingleAgent(
+    defaultCwd,
+    agents,
+    agentName,
+    task,
+    cwd,
+    step,
+    required,
+  );
+}
+
+function parsePermissionRequired(text: string): PermissionRequired | undefined {
+  const match = text.match(/PERMISSION_REQUIRED:(\{.*\})/s);
+  if (!match) return undefined;
+  try {
+    const parsed = JSON.parse(match[1]) as Partial<PermissionRequired>;
+    if (
+      (parsed.kind === "outside-cwd" || parsed.kind === "sensitive-file") &&
+      typeof parsed.path === "string"
+    ) {
+      return { kind: parsed.kind, path: parsed.path };
+    }
+  } catch {
+    return undefined;
+  }
+  return undefined;
+}
+
+function getPermissionRequiredFromResult(
+  result: SingleResult,
+): PermissionRequired | undefined {
+  if (result.permissionRequired) return result.permissionRequired;
+  return (
+    parsePermissionRequired(result.errorMessage ?? "") ??
+    parsePermissionRequired(result.stderr ?? "") ??
+    parsePermissionRequired(getFinalOutput(result.messages))
+  );
+}
+
+function extractPermissionRequiredFromEvent(
+  event: Record<string, unknown>,
+): PermissionRequired | undefined {
+  return (
+    parsePermissionRequired(
+      typeof event.errorMessage === "string" ? event.errorMessage : "",
+    ) ??
+    parsePermissionRequired(
+      typeof event.stderr === "string" ? event.stderr : "",
+    ) ??
+    parsePermissionRequired(
+      typeof event.reason === "string" ? event.reason : "",
+    ) ??
+    parsePermissionRequired(
+      typeof event.content === "string"
+        ? event.content
+        : Array.isArray(event.content)
+          ? event.content
+              .map((part) =>
+                part &&
+                typeof part === "object" &&
+                "text" in part &&
+                typeof (part as Record<string, unknown>).text === "string"
+                  ? (part as Record<string, unknown>).text
+                  : "",
+              )
+              .join("\n")
+          : "",
+    )
+  );
 }
 
 export default function subagentExtension(pi: ExtensionAPI) {
@@ -321,10 +542,9 @@ export default function subagentExtension(pi: ExtensionAPI) {
     parameters: SubagentParams,
 
     async execute(_toolCallId, params, _signal, _onUpdate, ctx) {
-      const agentScope: AgentScope = params.agentScope ?? "project";
-      const discovery = discoverAgents(ctx.cwd, agentScope);
+      const agentScope: AgentScope = params.agentScope ?? "builtin";
+      const discovery = discoverAgents(agentScope);
       const agents = discovery.agents;
-      const confirmProjectAgents = params.confirmProjectAgents ?? false;
 
       const hasChain = (params.chain?.length ?? 0) > 0;
       const hasTasks = (params.tasks?.length ?? 0) > 0;
@@ -336,7 +556,7 @@ export default function subagentExtension(pi: ExtensionAPI) {
       ): SubagentDetails => ({
         mode,
         agentScope,
-        projectAgentsDir: discovery.projectAgentsDir,
+        builtInAgentsDir: discovery.builtInAgentsDir,
         results,
       });
 
@@ -356,60 +576,19 @@ export default function subagentExtension(pi: ExtensionAPI) {
         };
       }
 
-      if (
-        (agentScope === "project" || agentScope === "both") &&
-        confirmProjectAgents &&
-        ctx.hasUI
-      ) {
-        const requestedAgentNames = new Set<string>();
-        if (params.chain)
-          for (const step of params.chain) requestedAgentNames.add(step.agent);
-        if (params.tasks)
-          for (const task of params.tasks) requestedAgentNames.add(task.agent);
-        if (params.agent) requestedAgentNames.add(params.agent);
-
-        const projectAgentsRequested = Array.from(requestedAgentNames)
-          .map((name) => agents.find((agent) => agent.name === name))
-          .filter((agent): agent is AgentConfig => agent?.source === "project");
-
-        if (projectAgentsRequested.length > 0) {
-          const names = projectAgentsRequested
-            .map((agent) => agent.name)
-            .join(", ");
-          const dir = discovery.projectAgentsDir ?? "(unknown)";
-          const ok = await ctx.ui.confirm(
-            "Run project-local agents?",
-            `Agents: ${names}\nSource: ${dir}\n\nProject agents are repo-controlled. Only continue for trusted repositories.`,
-          );
-          if (!ok) {
-            return {
-              content: [
-                {
-                  type: "text",
-                  text: "Canceled: project-local agents not approved.",
-                },
-              ],
-              details: makeDetails(
-                hasChain ? "chain" : hasTasks ? "parallel" : "single",
-                [],
-              ),
-            };
-          }
-        }
-      }
-
       if (params.chain && params.chain.length > 0) {
         const results: SingleResult[] = [];
         let previousOutput = "";
         for (let index = 0; index < params.chain.length; index++) {
           const step = params.chain[index];
           const task = step.task.replace(/\{previous\}/g, previousOutput);
-          const result = await runSingleAgent(
+          const result = await runSingleAgentWithRetry(
             ctx.cwd,
             agents,
             step.agent,
             task,
             step.cwd,
+            ctx,
             index + 1,
           );
           results.push(result);
@@ -469,12 +648,13 @@ export default function subagentExtension(pi: ExtensionAPI) {
           params.tasks,
           MAX_CONCURRENCY,
           async (task) =>
-            await runSingleAgent(
+            await runSingleAgentWithRetry(
               ctx.cwd,
               agents,
               task.agent,
               task.task,
               task.cwd,
+              ctx,
             ),
         );
         const successCount = results.filter(
@@ -501,12 +681,13 @@ export default function subagentExtension(pi: ExtensionAPI) {
         };
       }
 
-      const result = await runSingleAgent(
+      const result = await runSingleAgentWithRetry(
         ctx.cwd,
         agents,
         params.agent!,
         params.task!,
         params.cwd,
+        ctx,
       );
       const failed =
         result.exitCode !== 0 ||
@@ -528,7 +709,7 @@ export default function subagentExtension(pi: ExtensionAPI) {
     },
 
     renderCall(args, theme) {
-      const scope: AgentScope = args.agentScope ?? "project";
+      const scope: AgentScope = args.agentScope ?? "builtin";
       if (args.chain && args.chain.length > 0) {
         let text = `${theme.fg("toolTitle", theme.bold("subagent "))}${theme.fg("accent", `chain (${args.chain.length} steps)`)}${theme.fg("muted", ` [${scope}]`)}`;
         for (const [index, step] of args.chain.slice(0, 3).entries()) {

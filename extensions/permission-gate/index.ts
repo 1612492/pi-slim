@@ -48,7 +48,9 @@ function getCandidatePath(event: {
     case "edit":
       return typeof event.input.path === "string"
         ? event.input.path
-        : undefined;
+        : typeof event.input.filePath === "string"
+          ? event.input.filePath
+          : undefined;
     case "ls":
     case "find":
     case "grep": {
@@ -84,8 +86,10 @@ function extractBashCandidatePaths(command: string): string[] {
     if (
       token.startsWith("/") ||
       token.startsWith("~/") ||
+      token.startsWith("./") ||
       token.startsWith("../") ||
       token.startsWith("./../") ||
+      token.startsWith(".env") ||
       token.includes("/../")
     ) {
       candidates.push(token);
@@ -102,26 +106,107 @@ function resolveBashCandidatePath(cwd: string, candidatePath: string): string {
   return path.resolve(cwd, candidatePath);
 }
 
+function isSensitiveEnvPath(targetPath: string): boolean {
+  const base = path.basename(targetPath);
+  return (
+    base === ".env" || (base.startsWith(".env.") && base !== ".env.example")
+  );
+}
+
 type PermissionContext = {
   cwd: string;
   hasUI: boolean;
   ui: { confirm(title: string, message: string): Promise<boolean> };
 };
 
+type PermissionOverride = {
+  kind: "outside-cwd" | "sensitive-file";
+  path: string;
+};
+
+const PERMISSION_OVERRIDE_ENV = "PI_PERMISSION_GATE_OVERRIDE";
+
+function getPermissionOverride(): PermissionOverride | undefined {
+  const raw = process.env[PERMISSION_OVERRIDE_ENV];
+  if (!raw) return undefined;
+
+  try {
+    const parsed = JSON.parse(raw) as Partial<PermissionOverride>;
+    if (
+      (parsed.kind === "outside-cwd" || parsed.kind === "sensitive-file") &&
+      typeof parsed.path === "string"
+    ) {
+      return { kind: parsed.kind, path: parsed.path };
+    }
+  } catch {
+    return undefined;
+  }
+
+  return undefined;
+}
+
+function formatPermissionRequired(
+  kind: PermissionOverride["kind"],
+  pathValue: string,
+) {
+  return `PERMISSION_REQUIRED:${JSON.stringify({ kind, path: pathValue })}`;
+}
+
+function matchesOverride(
+  override: PermissionOverride | undefined,
+  kind: PermissionOverride["kind"],
+  pathValue: string,
+): boolean {
+  return override?.kind === kind && override.path === pathValue;
+}
+
 async function confirmOutsideCwdPath(
   ctx: PermissionContext,
   resolvedTarget: string,
 ) {
+  const override = getPermissionOverride();
+  if (matchesOverride(override, "outside-cwd", resolvedTarget)) {
+    return undefined;
+  }
+
   if (!ctx.hasUI) {
     return {
       block: true,
-      reason: `Outside cwd access blocked: ${resolvedTarget}`,
+      reason: formatPermissionRequired("outside-cwd", resolvedTarget),
     };
   }
 
   const allowed = await ctx.ui.confirm(
     "Allow outside-cwd access?",
     `The agent wants to access a path outside the current working directory.\n\ncwd: ${ctx.cwd}\npath: ${resolvedTarget}`,
+  );
+
+  if (!allowed) {
+    return { block: true, reason: "Blocked by user" };
+  }
+
+  return undefined;
+}
+
+async function confirmSensitiveFilePath(
+  ctx: PermissionContext,
+  resolvedTarget: string,
+) {
+  const override = getPermissionOverride();
+  if (matchesOverride(override, "sensitive-file", resolvedTarget)) {
+    return undefined;
+  }
+
+  if (!ctx.hasUI) {
+    return {
+      block: true,
+      reason: formatPermissionRequired("sensitive-file", resolvedTarget),
+    };
+  }
+
+  const allowed = await ctx.ui.confirm(
+    "Allow sensitive file access?",
+    `The agent wants to access a sensitive environment file.\n\npath: ${resolvedTarget}`,
   );
 
   if (!allowed) {
@@ -172,6 +257,9 @@ RUNTIME PERMISSION GATE:
 
       for (const bashPath of extractBashCandidatePaths(command)) {
         const resolvedTarget = resolveBashCandidatePath(ctx.cwd, bashPath);
+        if (isSensitiveEnvPath(resolvedTarget)) {
+          return await confirmSensitiveFilePath(ctx, resolvedTarget);
+        }
         if (isOutsideCwd(ctx.cwd, resolvedTarget)) {
           return await confirmOutsideCwdPath(ctx, resolvedTarget);
         }
@@ -186,6 +274,9 @@ RUNTIME PERMISSION GATE:
     if (!candidatePath) return undefined;
 
     const resolvedTarget = path.resolve(ctx.cwd, candidatePath);
+    if (isSensitiveEnvPath(resolvedTarget)) {
+      return await confirmSensitiveFilePath(ctx, resolvedTarget);
+    }
     if (!isOutsideCwd(ctx.cwd, resolvedTarget)) {
       return undefined;
     }

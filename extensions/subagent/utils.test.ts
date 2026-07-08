@@ -11,35 +11,37 @@ describe("subagent agent discovery", () => {
     process.env.HOME = originalHome;
   });
 
-  it("loads project agents and lets them override user agents", async () => {
+  it("loads built-in agents globally and lets user agents override them", async () => {
     const root = await mkdtemp(join(tmpdir(), "pi-agents-test-"));
     const userAgentsDir = join(root, "home", ".pi", "agent", "agents");
-    const projectAgentsDir = join(root, "repo", "agents");
     await mkdir(userAgentsDir, { recursive: true });
-    await mkdir(projectAgentsDir, { recursive: true });
     process.env.HOME = join(root, "home");
 
     await writeFile(
       join(userAgentsDir, "explorer.md"),
       `---\nname: explorer\ndescription: user explorer\ntools: read\n---\nUser prompt`,
     );
-    await writeFile(
-      join(projectAgentsDir, "explorer.md"),
-      `---\nname: explorer\ndescription: project explorer\ntools: read, grep\n---\nProject prompt`,
-    );
-    await writeFile(
-      join(projectAgentsDir, "oracle.md"),
-      `---\nname: oracle\ndescription: project oracle\n---\nOracle prompt`,
-    );
 
-    const both = discoverAgents(join(root, "repo"), "both");
-    expect(both.projectAgentsDir).toBe(projectAgentsDir);
+    const both = discoverAgents("both");
+    expect(both.builtInAgentsDir).toBe(join(process.cwd(), "agents"));
     expect(
       both.agents.find((agent) => agent.name === "explorer")?.description,
-    ).toBe("project explorer");
+    ).toBe("user explorer");
     expect(both.agents.map((agent) => agent.name).sort()).toEqual([
       "explorer",
+      "fixer",
+      "librarian",
       "oracle",
+    ]);
+  });
+
+  it("defaults to builtin-only discovery", async () => {
+    const result = discoverAgents("builtin");
+    expect(result.agents.map((agent) => agent.source)).toEqual([
+      "builtin",
+      "builtin",
+      "builtin",
+      "builtin",
     ]);
   });
 });

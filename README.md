@@ -67,10 +67,10 @@ Plan mode is runtime state, not a persisted plan file workflow.
 
 Additional behavior:
 
-- default `agentScope` is `project`
-- project agents are discovered from the nearest `agents/` directory
-- `agentScope` can be `user`, `project`, or `both`
-- `confirmProjectAgents` can require approval before running repo-local agents
+- default `agentScope` is `builtin`
+- built-in agents are discovered from this package's `agents/` directory, regardless of target cwd
+- `agentScope` can be `builtin`, `user`, or `both`
+- user agents from `~/.pi/agent/agents` can override built-ins by name
 
 ## Research tools
 
