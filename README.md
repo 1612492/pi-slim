@@ -1,6 +1,6 @@
 # pi-slim
 
-Minimal Pi package focused on context-efficient docs lookup, structured clarification, runtime plan mode, and delegated subagents.
+Minimal Pi package focused on context-efficient docs lookup, structured clarification, runtime plan mode, delegated subagents, and timeline history.
 
 ## What it provides
 
@@ -19,6 +19,7 @@ Minimal Pi package focused on context-efficient docs lookup, structured clarific
 - `lsp_diagnostics` (requires `filePath`)
 - `subagent`
 - `questionnaire`
+- `timeline`
 
 ### Runtime workflow
 
@@ -160,6 +161,9 @@ extensions/
     index.ts
     utils.ts
   questionnaire/
+    index.ts
+    index.test.ts
+  timeline/
     index.ts
     index.test.ts
 skills/
