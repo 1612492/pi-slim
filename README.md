@@ -133,48 +133,6 @@ Select it in `~/.pi/agent/settings.json`:
 
 The theme source file is available at `themes/catppuccin-mocha.json`.
 
-## Package layout
-
-```text
-agents/
-  explorer.md
-  librarian.md
-  fixer.md
-  oracle.md
-extensions/
-  index.ts
-  context7/
-    index.ts
-    index.test.ts
-  exa/
-    index.ts
-    index.test.ts
-  lsp/
-    index.ts
-    index.test.ts
-  permission-gate/
-    index.ts
-  plan-mode/
-    index.ts
-    utils.ts
-  subagent/
-    index.ts
-    utils.ts
-  questionnaire/
-    index.ts
-    index.test.ts
-  timeline/
-    index.ts
-    index.test.ts
-skills/
-  explorer/
-  librarian/
-  fixer/
-  oracle/
-  plan-mode/
-  research-tools/
-```
-
 ## Example usage
 
 ```text

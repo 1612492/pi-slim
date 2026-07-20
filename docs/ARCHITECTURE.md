@@ -12,10 +12,11 @@ Main Session
   ├─ asks clarifying questions with questionnaire when needed
   ├─ drafts a numbered Plan:
   ├─ executes with [DONE:n] tracking when approved
-  ├─ calls Explorer for local code discovery when needed
-  ├─ calls Librarian for docs/research when needed
-  ├─ calls Oracle for review or strategic guidance when needed
-  └─ calls Fixer for isolated implementation in build mode when needed
+  ├─ keeps questionnaire + subagent active in plan mode
+  ├─ routes Explorer discovery through subagent when needed
+  ├─ routes Librarian docs/research through subagent when needed
+  ├─ routes Oracle review through subagent when needed
+  └─ routes Fixer implementation outside plan mode when needed
 
 Explorer
   └─ local search + targeted file reads
@@ -43,7 +44,7 @@ Ctrl+\\
   └─ asks the agent for a numbered Plan:
 
 execute plan
-  ├─ restores full tool access
+  ├─ restores saved non-plan tools
   └─ tracks completion with [DONE:n]
 ```
 

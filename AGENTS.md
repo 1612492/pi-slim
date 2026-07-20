@@ -105,3 +105,6 @@ Rules:
 5. If a change increases output verbosity, justify it and keep the default path compact.
 6. Keep the runtime workflow explicit: `Ctrl+\\` for read-only planning, then execute with tracked `[DONE:n]` steps when ready.
 7. Keep package docs aligned with the actual tools exported from `extensions/`.
+8. Keep source files small by default: prefer splitting responsibilities before a file grows past roughly 200-300 lines.
+9. Treat 300 lines as a soft ceiling for repo-owned source files under `extensions/` unless there is a strong reason not to.
+10. Prefer seam-focused extractions such as `client`, `format`, `types`, `helpers`, `controller`, or `command` modules over adding more logic to an already large file.
